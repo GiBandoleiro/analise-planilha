@@ -11,11 +11,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+<!-- Favicon (Ícone da Aba) -->
+    <link rel="icon" type="image/png" href="logoGrafico.png">
     <style>
         body { background-color: #0f172a; color: #e2e8f0; font-family: 'Inter', sans-serif; }
         .card { background-color: #1e293b; border-radius: 0.75rem; padding: 1.5rem; border: 1px solid #334155; display: flex; flex-direction: column; transition: all 0.3s ease-in-out; }
         .card-title { color: #94a3b8; font-weight: 500; }
-        .card-value { color: #f1f5f9; font-size: 1.875rem; font-weight: 700; }
+        .card-value { color: #f1f5f9; font-size: 1.75rem; font-weight: 700; } /* Fonte ajustada */
         .chart-container { position: relative; flex-grow: 1; min-height: 350px; }
         #file-drop-zone { border: 2px dashed #334155; border-radius: 0.75rem; padding: 2rem; text-align: center; cursor: pointer; transition: background-color 0.2s, border-color 0.2s; }
         #file-drop-zone:hover, #file-drop-zone.dragover { background-color: #1e293b; border-color: #4f46e5; }
@@ -30,8 +32,27 @@
         .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .pagination-btn.active { background-color: #4f46e5; }
         
-        .pdf-export .card-value { font-size: 1.5rem !important; word-break: break-word; }
-        .pdf-export .card { page-break-inside: avoid; }
+        /* Export Specific Styles */
+        .export-render .card-value {
+            font-size: 1.5rem !important; 
+            overflow-wrap: break-word; /* Garante a quebra de palavras */
+        }
+        .export-render .card {
+            page-break-inside: avoid; /* Evita que os cards quebrem entre páginas */
+        }
+        .export-render * {
+            -webkit-hyphens: auto;
+            -ms-hyphens: auto;
+            hyphens: auto; /* Ajuda na quebra de texto */
+        }
+
+        /* Custom multiselect */
+        .multiselect-container { max-height: 200px; overflow-y: auto; }
+        .multiselect-container label { display: flex; align-items: center; padding: 0.5rem; cursor: pointer; border-radius: 0.25rem; }
+        .multiselect-container label:hover { background-color: #334155; }
+        .custom-checkbox { appearance: none; -webkit-appearance: none; height: 1.25rem; width: 1.25rem; background-color: #475569; border-radius: 0.25rem; cursor: pointer; display: inline-block; position: relative; flex-shrink: 0; }
+        .custom-checkbox:checked { background-color: #4f46e5; }
+        .custom-checkbox:checked::after { content: '\f00c'; font-family: 'Font Awesome 6 Free'; font-weight: 900; color: white; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 0.8rem; }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
@@ -61,7 +82,7 @@
             <div id="printable-content">
                 <div id="filters-section" class="card mb-8">
                     <h2 class="font-bold text-lg mb-4">Filtros Dinâmicos</h2>
-                    <div id="dynamic-filters-container" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4"></div>
+                    <div id="dynamic-filters-container" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4"></div>
                     <div class="flex flex-col sm:flex-row gap-4 items-end pt-4 border-t border-slate-700">
                         <div class="w-full flex flex-col gap-1"><label>Período</label><div class="flex items-center gap-2 bg-slate-700/50 p-2 rounded-lg"><span class="text-slate-400">De:</span><input type="date" id="filter-start-date" class="filter-input bg-transparent border-0 p-0"><span class="text-slate-400">Até:</span><input type="date" id="filter-end-date" class="filter-input bg-transparent border-0 p-0"></div></div>
                         <button id="clear-filters-btn" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded-lg transition-colors w-full sm:w-auto flex-shrink-0">Limpar</button>
@@ -179,11 +200,30 @@
             document.getElementById('filter-start-date').value = minDate.toISOString().split('T')[0];
             document.getElementById('filter-end-date').value = maxDate.toISOString().split('T')[0];
         }
-        populateDynamicUI(); addListeners(); applyFilters();
+        populateDynamicUI(headers); addListeners(); applyFilters();
     }
     
-    function populateDynamicUI() {
+    function populateDynamicUI(headers) {
         elements.dynamicFiltersContainer.innerHTML = '';
+        const campaignCol = findColumn(headers, ['Campaign Name']);
+        if(campaignCol) {
+            const container = document.createElement('div'); container.className = 'flex flex-col gap-1 relative';
+            const label = document.createElement('label'); label.textContent = 'Campanhas';
+            const button = document.createElement('button'); button.id = 'campaign-multiselect-btn'; button.className = 'filter-select text-left'; button.textContent = 'Selecionar...';
+            const dropdown = document.createElement('div'); dropdown.id = 'campaign-multiselect-dropdown'; dropdown.className = 'hidden absolute top-full left-0 w-full bg-slate-600 border border-slate-700 rounded-md mt-1 z-10 p-2 multiselect-container';
+            
+            const uniqueCampaigns = [...new Set(originalData.map(item => item.campaignName))].sort();
+            uniqueCampaigns.forEach(campaign => {
+                const item = document.createElement('label');
+                item.className = 'flex items-center';
+                item.innerHTML = `<input type="checkbox" class="campaign-checkbox custom-checkbox" value="${campaign}"><span class="ml-2">${campaign}</span>`;
+                dropdown.appendChild(item);
+            });
+            
+            container.appendChild(label); container.appendChild(button); container.appendChild(dropdown);
+            elements.dynamicFiltersContainer.appendChild(container);
+        }
+
         categoricalColumns.forEach(colName => {
             const container = document.createElement('div'); container.className = 'flex flex-col gap-1';
             const label = document.createElement('label'); label.textContent = colName;
@@ -195,11 +235,7 @@
             elements.dynamicFiltersContainer.appendChild(container);
         });
 
-        document.querySelectorAll('.category-selector').forEach((sel, i) => {
-            sel.innerHTML = '';
-            categoricalColumns.forEach((col, j) => sel.add(new Option(col, col)));
-            if (categoricalColumns[i]) sel.value = categoricalColumns[i];
-        });
+        document.querySelectorAll('.category-selector').forEach((sel, i) => { sel.innerHTML = ''; categoricalColumns.forEach((col, j) => sel.add(new Option(col, col))); if (categoricalColumns[i]) sel.value = categoricalColumns[i]; });
 
         document.getElementById('card-leads').style.display = has.leads ? 'flex' : 'none';
         document.getElementById('card-cpl').style.display = has.leads && has.spend ? 'flex' : 'none';
@@ -211,21 +247,46 @@
         document.getElementById('dynamic-filters-container').addEventListener('change', applyFilters);
         document.getElementById('filter-start-date').addEventListener('change', applyFilters);
         document.getElementById('filter-end-date').addEventListener('change', applyFilters);
-        elements.clearFiltersBtn.addEventListener('click', () => { document.querySelectorAll('.dynamic-filter, #filter-start-date, #filter-end-date').forEach(el => { if(el.tagName === 'SELECT') el.selectedIndex = 0; else el.value = ''; }); applyFilters(); });
+        elements.clearFiltersBtn.addEventListener('click', () => { 
+            document.querySelectorAll('.dynamic-filter, #filter-start-date, #filter-end-date').forEach(el => { if(el.tagName === 'SELECT') el.selectedIndex = 0; else el.value = ''; }); 
+            const campaignCheckboxes = document.querySelectorAll('.campaign-checkbox');
+            if (campaignCheckboxes.length > 0) {
+                campaignCheckboxes.forEach(cb => cb.checked = false);
+                document.getElementById('campaign-multiselect-btn').textContent = 'Selecionar...';
+            }
+            applyFilters(); 
+        });
         document.querySelectorAll('.category-selector, .chart-type-selector').forEach(sel => sel.addEventListener('change', applyFilters));
         elements.downloadPdfBtn.addEventListener('click', downloadPDF);
         elements.downloadImageBtn.addEventListener('click', downloadImage);
         elements.aiBtn.addEventListener('click', generateInsights);
         elements.campaignSearch.addEventListener('input', (e) => { tableState.searchTerm = e.target.value; tableState.currentPage = 1; updateTables(); });
         document.querySelectorAll('.sortable-header').forEach(header => header.addEventListener('click', (e) => { const newSortColumn = e.currentTarget.dataset.sort; if (tableState.sortColumn === newSortColumn) { tableState.sortDirection = tableState.sortDirection === 'asc' ? 'desc' : 'asc'; } else { tableState.sortColumn = newSortColumn; tableState.sortDirection = 'desc'; } updateTables(); }));
+        
+        const campaignBtn = document.getElementById('campaign-multiselect-btn');
+        const campaignDropdown = document.getElementById('campaign-multiselect-dropdown');
+        if (campaignBtn) {
+            campaignBtn.addEventListener('click', () => campaignDropdown.classList.toggle('hidden'));
+            document.addEventListener('click', (e) => { if (!campaignBtn.contains(e.target) && !campaignDropdown.contains(e.target) && !e.target.closest('#campaign-multiselect-dropdown')) campaignDropdown.classList.add('hidden'); });
+            campaignDropdown.addEventListener('change', () => {
+                const selectedCount = document.querySelectorAll('.campaign-checkbox:checked').length;
+                campaignBtn.textContent = selectedCount > 0 ? `${selectedCount} selecionada(s)` : 'Selecionar...';
+            });
+        }
     }
 
     function applyFilters() {
         const dynamicFilters = Array.from(document.querySelectorAll('.dynamic-filter')).map(sel => ({ key: sel.dataset.column, value: sel.value }));
+        const selectedCampaigns = Array.from(document.querySelectorAll('.campaign-checkbox:checked')).map(cb => cb.value);
         const f = { start: document.getElementById('filter-start-date').valueAsDate, end: document.getElementById('filter-end-date').valueAsDate };
         if (f.start) f.start.setUTCHours(0, 0, 0, 0);
         if (f.end) f.end.setUTCHours(23, 59, 59, 999);
-        filteredData = originalData.filter(row => { const dateMatch = (!f.start || row.date >= f.start) && (!f.end || row.date <= f.end); const categoryMatch = dynamicFilters.every(filter => !filter.value || row[filter.key] === filter.value); return dateMatch && categoryMatch; });
+        filteredData = originalData.filter(row => {
+            const dateMatch = (!f.start || row.date >= f.start) && (!f.end || row.date <= f.end);
+            const categoryMatch = dynamicFilters.every(filter => !filter.value || row[filter.key] === filter.value);
+            const campaignMatch = selectedCampaigns.length === 0 || selectedCampaigns.includes(row.campaignName);
+            return dateMatch && categoryMatch && campaignMatch;
+        });
         updateDashboard();
     }
     
@@ -269,11 +330,18 @@
     function drawOrUpdateChart(id, type, data, options = {}) { if (charts[id]) charts[id].destroy(); charts[id] = new Chart(document.getElementById(id), { type, data, options }); }
 
     function updateAllCharts() {
-        const timeData = filteredData.reduce((acc, item) => { const date = item.date.toISOString().split('T')[0]; if (!acc[date]) acc[date] = { spend: 0, leads: 0 }; acc[date].spend += item.spend; acc[date].leads += item.leads; return acc; }, {});
-        const sortedDates = Object.keys(timeData).sort();
-        const timeDatasets = [{ label: 'Investimento', data: sortedDates.map(d => timeData[d].spend), backgroundColor: chartColors[0], yAxisID: 'y' }];
-        if (has.leads) timeDatasets.push({ label: 'Leads', data: sortedDates.map(d => timeData[d].leads), backgroundColor: chartColors[1], yAxisID: 'y1' });
-        drawOrUpdateChart('timeline-chart', document.getElementById('timeline-chart-type').value, { labels: sortedDates, datasets: timeDatasets}, { scales: { x: { type: 'time', time: { unit: 'day' } }, y: { position: 'left' }, y1: { position: 'right', grid: { drawOnChartArea: false }, display: has.leads } } });
+        const timeData = filteredData.reduce((acc, item) => { 
+            const key = item.date.toISOString().split('T')[0];
+            if (!acc[key]) acc[key] = { spend: 0, leads: 0 }; 
+            acc[key].spend += item.spend; 
+            acc[key].leads += item.leads; 
+            return acc; 
+        }, {});
+        const sortedKeys = Object.keys(timeData).sort();
+        const timeDatasets = [{ label: 'Investimento', data: sortedKeys.map(k => timeData[k].spend), backgroundColor: chartColors[0], yAxisID: 'y' }];
+        if (has.leads) timeDatasets.push({ label: 'Leads', data: sortedKeys.map(k => timeData[k].leads), backgroundColor: chartColors[1], yAxisID: 'y1' });
+        
+        drawOrUpdateChart('timeline-chart', document.getElementById('timeline-chart-type').value, { labels: sortedKeys, datasets: timeDatasets}, { scales: { x: { type: 'time', time: { unit: 'day', tooltipFormat: 'dd/MM/yy' } }, y: { position: 'left' }, y1: { position: 'right', grid: { drawOnChartArea: false }, display: has.leads } } });
         
         [1, 2, 3].forEach(i => {
             const category = document.getElementById(`chart${i}-category`).value;
@@ -288,8 +356,17 @@
     }
 
     async function generateCanvas() {
-        const content = document.getElementById('printable-content'); content.classList.add('pdf-export'); await new Promise(resolve => setTimeout(resolve, 50));
-        const canvas = await html2canvas(content, { backgroundColor: '#0f172a', scale: 1.5 }); content.classList.remove('pdf-export'); return canvas;
+        const content = document.getElementById('printable-content');
+        content.classList.add('export-render');
+        await new Promise(resolve => setTimeout(resolve, 50));
+        const canvas = await html2canvas(content, { 
+            backgroundColor: '#0f172a', 
+            scale: 1.5,
+            useCORS: true,
+            allowTaint: true
+        });
+        content.classList.remove('export-render');
+        return canvas;
     }
 
     async function downloadImage() {
