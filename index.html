@@ -7,12 +7,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-<!-- Favicon (Ícone da Aba) -->
-    <link rel="icon" type="image/png" href="logoGrafico.png">
     <style>
         body { background-color: #0f172a; color: #e2e8f0; font-family: 'Inter', sans-serif; }
         .card { background-color: #1e293b; border-radius: 0.75rem; padding: 1.5rem; border: 1px solid #334155; display: flex; flex-direction: column; transition: all 0.3s ease-in-out; }
@@ -33,18 +32,9 @@
         .pagination-btn.active { background-color: #4f46e5; }
         
         /* Export Specific Styles */
-        .export-render .card-value {
-            font-size: 1.5rem !important; 
-            overflow-wrap: break-word; /* Garante a quebra de palavras */
-        }
-        .export-render .card {
-            page-break-inside: avoid; /* Evita que os cards quebrem entre páginas */
-        }
-        .export-render * {
-            -webkit-hyphens: auto;
-            -ms-hyphens: auto;
-            hyphens: auto; /* Ajuda na quebra de texto */
-        }
+        .export-render .card-value { font-size: 1.5rem !important; overflow-wrap: break-word; }
+        .export-render .card { page-break-inside: avoid; }
+        .export-render * { -webkit-hyphens: auto; -ms-hyphens: auto; hyphens: auto; }
 
         /* Custom multiselect */
         .multiselect-container { max-height: 200px; overflow-y: auto; }
@@ -56,8 +46,7 @@
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
-<body class="p-4 sm:p-6 lg:p-8">
-
+<body class="p-4 sm:p-6 lg:p-8 pb-20">
     <div id="loading-overlay" class="fixed inset-0 bg-slate-900 bg-opacity-75 z-50 flex items-center justify-center hidden">
         <div class="text-center"><div class="spinner"></div><p class="mt-4 text-white">Gerando...</p></div>
     </div>
@@ -84,7 +73,7 @@
                 <div id="filters-section" class="card mb-8">
                     <h2 class="font-bold text-lg mb-4">Filtros Dinâmicos</h2>
                     <div id="dynamic-filters-container" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4"></div>
-                    <div class="flex flex-col sm:flex-row gap-4 items-end pt-4 border-t border-slate-700">
+                    <div id="date-filter-container" class="flex flex-col sm:flex-row gap-4 items-end pt-4 border-t border-slate-700">
                         <div class="w-full flex flex-col gap-1"><label>Período</label><div class="flex items-center gap-2 bg-slate-700/50 p-2 rounded-lg"><span class="text-slate-400">De:</span><input type="date" id="filter-start-date" class="filter-input bg-transparent border-0 p-0"><span class="text-slate-400">Até:</span><input type="date" id="filter-end-date" class="filter-input bg-transparent border-0 p-0"></div></div>
                         <button id="clear-filters-btn" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded-lg transition-colors w-full sm:w-auto flex-shrink-0">Limpar</button>
                     </div>
@@ -101,18 +90,20 @@
                 </div>
                 <div class="card mb-8"><h2 class="font-bold text-lg mb-2">Insights com IA</h2><div id="ai-insights-content" class="text-slate-300 whitespace-pre-wrap">Clique no botão para gerar uma análise.</div><div id="ai-loading" class="hidden my-4"><div class="spinner"></div></div><button id="generate-ai-insights" class="mt-4 bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded-lg transition-colors w-full sm:w-auto self-start"><i class="fas fa-wand-magic-sparkles mr-2"></i>Gerar Análise</button></div>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                    <div class="card"><div class="flex justify-between items-center mb-4"><h2 class="font-bold text-lg">Evolução Temporal</h2><select id="timeline-chart-type" class="chart-type-selector"><option value="line">Linha</option><option value="bar">Barra</option></select></div><div class="chart-container"><canvas id="timeline-chart"></canvas></div></div>
-                    <div class="card"><div class="flex justify-between items-center mb-4"><h2 class="font-bold text-lg">Análise por Categoria 1</h2><div><select id="chart1-category" class="category-selector mr-2"></select><select id="chart1-type" class="chart-type-selector"><option value="bar">Barra</option><option value="pie">Pizza</option></select></div></div><div class="chart-container"><canvas id="chart1"></canvas></div></div>
-                    <div class="card"><div class="flex justify-between items-center mb-4"><h2 class="font-bold text-lg">Análise por Categoria 2</h2><div><select id="chart2-category" class="category-selector mr-2"></select><select id="chart2-type" class="chart-type-selector"><option value="bar">Barra</option><option value="doughnut">Rosca</option></select></div></div><div class="chart-container"><canvas id="chart2"></canvas></div></div>
-                    <div class="card"><div class="flex justify-between items-center mb-4"><h2 class="font-bold text-lg">Análise por Categoria 3</h2><div><select id="chart3-category" class="category-selector mr-2"></select><select id="chart3-type" class="chart-type-selector"><option value="bar">Barra</option><option value="line">Linha</option></select></div></div><div class="chart-container"><canvas id="chart3"></canvas></div></div>
+                    <div class="card" id="timeline-card"><div class="flex justify-between items-center mb-4"><h2 class="font-bold text-lg">Evolução Temporal</h2><select id="timeline-chart-type" class="chart-type-selector"><option value="line">Linha</option><option value="bar">Barra</option></select></div><div class="chart-container"><canvas id="timeline-chart"></canvas></div></div>
+                    <div class="card"><div class="flex justify-between items-center mb-4"><h2 class="font-bold text-lg">Análise por Categoria 1</h2><div class="flex items-center gap-2"><select id="chart1-category" class="category-selector"></select><select id="chart1-type" class="chart-type-selector"><option value="bar">Barra</option><option value="pie">Pizza</option></select><button id="chart1-labels-toggle" class="p-2 bg-slate-700 rounded-md hover:bg-slate-600 transition-colors hidden" title="Mostrar/Ocultar Rótulos"><i class="fas fa-tags"></i></button></div></div><div class="chart-container"><canvas id="chart1"></canvas></div></div>
+                    <div class="card"><div class="flex justify-between items-center mb-4"><h2 class="font-bold text-lg">Análise por Categoria 2</h2><div class="flex items-center gap-2"><select id="chart2-category" class="category-selector"></select><select id="chart2-type" class="chart-type-selector"><option value="bar">Barra</option><option value="doughnut">Rosca</option></select><button id="chart2-labels-toggle" class="p-2 bg-slate-700 rounded-md hover:bg-slate-600 transition-colors hidden" title="Mostrar/Ocultar Rótulos"><i class="fas fa-tags"></i></button></div></div><div class="chart-container"><canvas id="chart2"></canvas></div></div>
+                    <div class="card"><div class="flex justify-between items-center mb-4"><h2 class="font-bold text-lg">Análise por Categoria 3</h2><div class="flex items-center gap-2"><select id="chart3-category" class="category-selector"></select><select id="chart3-type" class="chart-type-selector"><option value="bar">Barra</option><option value="line">Linha</option></select><button id="chart3-labels-toggle" class="p-2 bg-slate-700 rounded-md hover:bg-slate-600 transition-colors hidden" title="Mostrar/Ocultar Rótulos"><i class="fas fa-tags"></i></button></div></div><div class="chart-container"><canvas id="chart3"></canvas></div></div>
                 </div>
                 <div class="card"><div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4"><h2 class="font-bold text-lg">Ranking de Campanhas</h2><input type="search" id="campaign-search" placeholder="Pesquisar campanha..." class="search-input md:w-1/3"></div><div class="overflow-x-auto"><table class="w-full text-left"><thead id="campaign-ranking-head"></thead><tbody id="campaign-ranking-body"></tbody></table></div><div id="pagination-controls" class="mt-4 flex justify-center items-center gap-2"></div></div>
             </div>
         </div>
     </div>
-
+    <div class="fixed bottom-0 left-0 right-0 z-50 w-full text-center py-4 bg-gray-800 shadow-lg text-white">          <p class="text-sm flex justify-center items-center gap-4">            Desenvolvido por Giovanni Fuentes Giannetti:             <!-- Instagram -->            <a href="https://instagram.com/giovanni.fg" target="_blank" class="text-pink-400 hover:text-pink-300 flex items-center gap-1"> <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-5 h-5"> <path d="M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 1.9.3 2.3.5.6.2 1 .6 1.4 1.1.4.4.9 1 1.1 1.6.2.4.4 1.1.5 2.3.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c-.1 1.2-.3 1.9-.5 2.3-.2.6-.6 1-1.1 1.4-.4.4-1 .9-1.6 1.1-.4.2-1.1.4-2.3.5-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-1.9-.3-2.3-.5-.6-.2-1-.6-1.4-1.1-.4-.4-.9-1-1.1-1.6-.2-.4-.4-1.1-.5-2.3C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.9c.1-1.2.3-1.9.5-2.3.2-.6.6-1 1.1-1.4.4-.4 1-.9 1.6-1.1.4-.2 1.1.4 2.3.5C8.4 2.2 8.8 2.2 12 2.2m0-2.2C8.7 0 8.3 0 7 .1 5.7.2 4.7.4 4 .7c-.9.4-1.7 1-2.4 1.7C.9 3.1.3 3.9 0 4.8c-.3.7-.5 1.7-.6 3C-.7 9 .7 9.3.7 12s0 3 .1 4.2c.1 1.3.3 2.3.6 3 .3.9.9 1.7 1.6 2.4.7.7 1.5 1.3 2.4 1.6.7.3 1.7.5 3 .6 1.2.1 1.6.1 4.9.1s3.6 0 4.9-.1c1.3-.1 2.3-.3 3-.6.9-.3 1.7-.9 2.4-1.6.7-.7 1.3-1.5 1.6-2.4.3-.7.5-1.7.6-3 .1-1.2.1-1.6.1-4.9s0-3.6-.1-4.9c-.1-1.3-.3-2.3-.6-3-.3-.9-.9-1.7-1.6-2.4C21.1 1.6 20.3 1 19.4.7c-.7-.3-1.7-.5-3-.6C15.6 0 15.2 0 12 0z"/> <path d="M12 5.8a6.2 6.2 0 1 0 0 12.4A6.2 6.2 0 0 0 12 5.8zm0 10.2a4 4 0 1 1 0-8.1 4 4 0 0 1 0 8.1zM18.4 4.6a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/>            </svg> @giovanni.fg </a>            <!-- LinkedIn -->            <a href="https://linkedin.com/in/giovanni-fg" target="_blank" class="text-blue-400 hover:text-blue-300 flex items-center gap-1">              <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-5 h-5">                <path d="M4.98 3.5C4.98 5 3.9 6 2.5 6S0 5 0 3.5 1.12 1 2.5 1s2.48 1 2.48 2.5zM.5 8h4V24h-4V8zM8.5 8h3.8v2.2h.1c.5-.9 1.8-1.9 3.7-1.9 3.9 0 4.6 2.5 4.6 5.7V24h-4v-7.8c0-1.9 0-4.4-2.7-4.4-2.7 0-3.1 2.1-3.1 4.2V24h-4V8z"/>              </svg>              giovanni-fg            </a>          </p>      </div>
 <script>
     const { jsPDF } = window.jspdf;
+    Chart.register(ChartDataLabels);
+    Chart.defaults.plugins.datalabels.display = false;
     Chart.defaults.color = '#94a3b8'; Chart.defaults.borderColor = '#334155'; Chart.defaults.plugins.legend.position = 'bottom'; Chart.defaults.maintainAspectRatio = false;
     
     let originalData = [], filteredData = [], charts = {}, categoricalColumns = [];
@@ -130,7 +121,8 @@
         campaignSearch: document.getElementById('campaign-search'), paginationControls: document.getElementById('pagination-controls')
     };
     let tableState = { currentPage: 1, rowsPerPage: 5, searchTerm: '', sortColumn: 'spend', sortDirection: 'desc' };
-    let has = { leads: false, cpc: false, cpm: false, spend: false, clicks: false, impressions: false };
+    let has = { date: false, leads: false, cpc: false, cpm: false, spend: false, clicks: false, impressions: false };
+    let chartLabelsState = { chart1: false, chart2: false, chart3: false };
 
     const formatCurrency = (v) => `R$ ${v.toFixed(2).replace('.', ',')}`;
     const formatNumber = (v) => new Intl.NumberFormat('pt-BR').format(v);
@@ -139,7 +131,7 @@
     
     function findColumn(headers, possibleNames) {
         for (const name of possibleNames) {
-            const found = headers.find(h => h.toLowerCase().trim() === name.toLowerCase().trim());
+            const found = headers.find(h => h.toLowerCase().trim().includes(name.toLowerCase().trim()));
             if (found) return found;
         }
         return null;
@@ -169,37 +161,41 @@
         const colNames = {
             campaign: findColumn(headers, ['Campaign Name']),
             date: findColumn(headers, ['Date', 'Data', 'Dia']),
-            spend: findColumn(headers, ['Spend (Cost, Amount Spent)', 'Valor gasto', 'Custo', 'Investimento']),
+            spend: findColumn(headers, ['Spend', 'Valor gasto', 'Custo', 'Investimento', 'Amount spent', 'Cost', 'Gasto']),
             leads: findColumn(headers, ['Action Leads', 'Leads']),
             clicks: findColumn(headers, ['Clicks', 'Cliques']),
             impressions: findColumn(headers, ['Impressions', 'Impressões']),
             cpc: findColumn(headers, ['CPC']),
             cpm: findColumn(headers, ['CPM'])
         };
-        has = { leads: !!colNames.leads, cpc: !!colNames.cpc, cpm: !!colNames.cpm, spend: !!colNames.spend, clicks: !!colNames.clicks, impressions: !!colNames.impressions };
+        has = { date: !!colNames.date, leads: !!colNames.leads, cpc: !!colNames.cpc, cpm: !!colNames.cpm, spend: !!colNames.spend, clicks: !!colNames.clicks, impressions: !!colNames.impressions };
+        if (!has.spend) { console.warn('Aviso: Nenhuma coluna de custo/investimento foi encontrada.'); }
 
         const primaryColumns = Object.values(colNames).filter(Boolean);
-        categoricalColumns = headers.filter(h => !primaryColumns.includes(h) && new Set(data.map(item => item[h])).size < 50);
+        categoricalColumns = headers.filter(h => !primaryColumns.includes(h) && new Set(data.map(item => item[h])).size > 1 && new Set(data.map(item => item[h])).size < 50);
         
         originalData = data.map(row => {
             const entry = {
-                campaignName: row[colNames.campaign] || 'N/A', date: parseDate(row[colNames.date]),
+                campaignName: row[colNames.campaign] || 'N/A', date: has.date ? parseDate(row[colNames.date]) : null,
                 spend: has.spend ? parseValue(row[colNames.spend]) : 0,
                 leads: has.leads ? parseInteger(row[colNames.leads]) : 0,
-                clicks: has.clicks ? parseInteger(row[colNames.clicks]) : 0,
+                clicks: has.clicks ? parseInt(parseValue(row[colNames.clicks] || '0'), 10) : 0,
                 impressions: has.impressions ? parseInteger(row[colNames.impressions]) : 0,
                 cpc: has.cpc ? parseValue(row[colNames.cpc]) : 0,
                 cpm: has.cpm ? parseValue(row[colNames.cpm]) : 0
             };
             categoricalColumns.forEach(col => entry[col] = row[col] || 'N/A');
             return entry;
-        }).filter(row => row.date instanceof Date && !isNaN(row.date.getTime()));
+        });
         
-        if (originalData.length > 0 && colNames.date) {
-            const dates = originalData.map(d => d.date);
-            const minDate = new Date(Math.min(...dates)), maxDate = new Date(Math.max(...dates));
-            document.getElementById('filter-start-date').value = minDate.toISOString().split('T')[0];
-            document.getElementById('filter-end-date').value = maxDate.toISOString().split('T')[0];
+        if (has.date) {
+            const dateFilteredData = originalData.filter(row => row.date instanceof Date && !isNaN(row.date.getTime()));
+            if (dateFilteredData.length > 0) {
+                const dates = dateFilteredData.map(d => d.date);
+                const minDate = new Date(Math.min(...dates)), maxDate = new Date(Math.max(...dates));
+                document.getElementById('filter-start-date').value = minDate.toISOString().split('T')[0];
+                document.getElementById('filter-end-date').value = maxDate.toISOString().split('T')[0];
+            }
         }
         populateDynamicUI(headers); addListeners(); applyFilters();
     }
@@ -212,15 +208,8 @@
             const label = document.createElement('label'); label.textContent = 'Campanhas';
             const button = document.createElement('button'); button.id = 'campaign-multiselect-btn'; button.className = 'filter-select text-left'; button.textContent = 'Selecionar...';
             const dropdown = document.createElement('div'); dropdown.id = 'campaign-multiselect-dropdown'; dropdown.className = 'hidden absolute top-full left-0 w-full bg-slate-600 border border-slate-700 rounded-md mt-1 z-10 p-2 multiselect-container';
-            
             const uniqueCampaigns = [...new Set(originalData.map(item => item.campaignName))].sort();
-            uniqueCampaigns.forEach(campaign => {
-                const item = document.createElement('label');
-                item.className = 'flex items-center';
-                item.innerHTML = `<input type="checkbox" class="campaign-checkbox custom-checkbox" value="${campaign}"><span class="ml-2">${campaign}</span>`;
-                dropdown.appendChild(item);
-            });
-            
+            uniqueCampaigns.forEach(campaign => { const item = document.createElement('label'); item.className = 'flex items-center'; item.innerHTML = `<input type="checkbox" class="campaign-checkbox custom-checkbox" value="${campaign}"><span class="ml-2">${campaign}</span>`; dropdown.appendChild(item); });
             container.appendChild(label); container.appendChild(button); container.appendChild(dropdown);
             elements.dynamicFiltersContainer.appendChild(container);
         }
@@ -242,6 +231,8 @@
         document.getElementById('card-cpl').style.display = has.leads && has.spend ? 'flex' : 'none';
         document.getElementById('card-cpc').style.display = has.cpc || (has.spend && has.clicks) ? 'flex' : 'none';
         document.getElementById('card-cpm').style.display = has.cpm || (has.spend && has.impressions) ? 'flex' : 'none';
+        document.getElementById('date-filter-container').style.display = has.date ? 'flex' : 'none';
+        document.getElementById('timeline-card').style.display = has.date ? 'flex' : 'none';
     }
 
     function addListeners() {
@@ -262,7 +253,6 @@
         elements.downloadImageBtn.addEventListener('click', downloadImage);
         elements.aiBtn.addEventListener('click', generateInsights);
         elements.campaignSearch.addEventListener('input', (e) => { tableState.searchTerm = e.target.value; tableState.currentPage = 1; updateTables(); });
-        document.querySelectorAll('.sortable-header').forEach(header => header.addEventListener('click', (e) => { const newSortColumn = e.currentTarget.dataset.sort; if (tableState.sortColumn === newSortColumn) { tableState.sortDirection = tableState.sortDirection === 'asc' ? 'desc' : 'asc'; } else { tableState.sortColumn = newSortColumn; tableState.sortDirection = 'desc'; } updateTables(); }));
         
         const campaignBtn = document.getElementById('campaign-multiselect-btn');
         const campaignDropdown = document.getElementById('campaign-multiselect-dropdown');
@@ -274,6 +264,12 @@
                 campaignBtn.textContent = selectedCount > 0 ? `${selectedCount} selecionada(s)` : 'Selecionar...';
             });
         }
+        [1, 2, 3].forEach(i => {
+            document.getElementById(`chart${i}-labels-toggle`).addEventListener('click', () => {
+                chartLabelsState[`chart${i}`] = !chartLabelsState[`chart${i}`];
+                applyFilters();
+            });
+        });
     }
 
     function applyFilters() {
@@ -283,7 +279,7 @@
         if (f.start) f.start.setUTCHours(0, 0, 0, 0);
         if (f.end) f.end.setUTCHours(23, 59, 59, 999);
         filteredData = originalData.filter(row => {
-            const dateMatch = (!f.start || row.date >= f.start) && (!f.end || row.date <= f.end);
+            const dateMatch = !has.date || ((!f.start || row.date >= f.start) && (!f.end || row.date <= f.end));
             const categoryMatch = dynamicFilters.every(filter => !filter.value || row[filter.key] === filter.value);
             const campaignMatch = selectedCampaigns.length === 0 || selectedCampaigns.includes(row.campaignName);
             return dateMatch && categoryMatch && campaignMatch;
@@ -331,28 +327,49 @@
     function drawOrUpdateChart(id, type, data, options = {}) { if (charts[id]) charts[id].destroy(); charts[id] = new Chart(document.getElementById(id), { type, data, options }); }
 
     function updateAllCharts() {
-        const timeData = filteredData.reduce((acc, item) => { 
-            const key = item.date.toISOString().split('T')[0];
-            if (!acc[key]) acc[key] = { spend: 0, leads: 0 }; 
-            acc[key].spend += item.spend; 
-            acc[key].leads += item.leads; 
-            return acc; 
-        }, {});
-        const sortedKeys = Object.keys(timeData).sort();
-        const timeDatasets = [{ label: 'Investimento', data: sortedKeys.map(k => timeData[k].spend), backgroundColor: chartColors[0], yAxisID: 'y' }];
-        if (has.leads) timeDatasets.push({ label: 'Leads', data: sortedKeys.map(k => timeData[k].leads), backgroundColor: chartColors[1], yAxisID: 'y1' });
-        
-        drawOrUpdateChart('timeline-chart', document.getElementById('timeline-chart-type').value, { labels: sortedKeys, datasets: timeDatasets}, { scales: { x: { type: 'time', time: { unit: 'day', tooltipFormat: 'dd/MM/yy' } }, y: { position: 'left' }, y1: { position: 'right', grid: { drawOnChartArea: false }, display: has.leads } } });
+        if (has.date) {
+            const timeData = filteredData.reduce((acc, item) => { 
+                const key = item.date.toISOString().split('T')[0];
+                if (!acc[key]) acc[key] = { spend: 0, leads: 0 }; 
+                acc[key].spend += item.spend; 
+                if (has.leads) acc[key].leads += item.leads; 
+                return acc; 
+            }, {});
+            const sortedKeys = Object.keys(timeData).sort();
+            const timeDatasets = [{ label: 'Investimento', data: sortedKeys.map(k => timeData[k].spend), backgroundColor: chartColors[0], yAxisID: 'y' }];
+            if (has.leads) timeDatasets.push({ label: 'Leads', data: sortedKeys.map(k => timeData[k].leads), backgroundColor: chartColors[1], yAxisID: 'y1' });
+            drawOrUpdateChart('timeline-chart', document.getElementById('timeline-chart-type').value, { labels: sortedKeys, datasets: timeDatasets}, { scales: { x: { type: 'time', time: { unit: 'day', tooltipFormat: 'dd/MM/yy' } }, y: { position: 'left' }, y1: { position: 'right', grid: { drawOnChartArea: false }, display: has.leads } } });
+        }
         
         [1, 2, 3].forEach(i => {
             const category = document.getElementById(`chart${i}-category`).value;
             const type = document.getElementById(`chart${i}-type`).value;
+            const toggleBtn = document.getElementById(`chart${i}-labels-toggle`);
+            
+            toggleBtn.style.display = (type === 'pie' || type === 'doughnut') ? 'block' : 'none';
+
             if (!category) return;
-            const groupedData = filteredData.reduce((acc, item) => { const group = item[category] || 'N/A'; if (!acc[group]) acc[group] = { spend: 0, leads: 0 }; acc[group].spend += item.spend; acc[group].leads += item.leads; return acc; }, {});
+            const groupedData = filteredData.reduce((acc, item) => { const group = item[category] || 'N/A'; if (!acc[group]) acc[group] = { spend: 0, leads: 0 }; acc[group].spend += item.spend; if(has.leads) acc[group].leads += item.leads; return acc; }, {});
             const labels = Object.keys(groupedData);
             const chartDatasets = [{ label: 'Investimento', data: labels.map(l => groupedData[l].spend), backgroundColor: chartColors }];
             if (has.leads) chartDatasets.push({ label: 'Leads', data: labels.map(l => groupedData[l].leads), backgroundColor: chartColors.map(c => c + '99') });
-            drawOrUpdateChart(`chart${i}`, type, { labels, datasets: chartDatasets});
+            
+            const options = {
+                plugins: {
+                    datalabels: {
+                        display: chartLabelsState[`chart${i}`],
+                        formatter: (value) => formatCurrency(value),
+                        color: '#fff',
+                        anchor: 'end',
+                        align: 'start',
+                        offset: -10,
+                        borderRadius: 4,
+                        backgroundColor: (context) => context.dataset.backgroundColor + 'AA',
+                        padding: 4
+                    }
+                }
+            };
+            drawOrUpdateChart(`chart${i}`, type, { labels, datasets: chartDatasets}, options);
         });
     }
 
@@ -419,21 +436,6 @@
         elements.aiBtn.disabled = false; elements.aiContent.classList.remove('hidden'); elements.aiLoading.classList.add('hidden');
     }
 </script>
-<div class="fixed bottom-0 left-0 right-0 z-50 w-full text-center py-4 bg-gray-800 shadow-lg text-white">  
-        <p class="text-sm flex justify-center items-center gap-4">  
-          Desenvolvido por Giovanni Fuentes Giannetti:   
-          <!-- Instagram -->  
-          <a href="https://instagram.com/giovanni.fg" target="_blank" class="text-pink-400 hover:text-pink-300 flex items-center gap-1"> <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-5 h-5"> <path d="M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 1.9.3 2.3.5.6.2 1 .6 1.4 1.1.4.4.9 1 1.1 1.6.2.4.4 1.1.5 2.3.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c-.1 1.2-.3 1.9-.5 2.3-.2.6-.6 1-1.1 1.4-.4.4-1 .9-1.6 1.1-.4.2-1.1.4-2.3.5-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-1.9-.3-2.3-.5-.6-.2-1-.6-1.4-1.1-.4-.4-.9-1-1.1-1.6-.2-.4-.4-1.1-.5-2.3C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.9c.1-1.2.3-1.9.5-2.3.2-.6.6-1 1.1-1.4.4-.4 1-.9 1.6-1.1.4-.2 1.1.4 2.3.5C8.4 2.2 8.8 2.2 12 2.2m0-2.2C8.7 0 8.3 0 7 .1 5.7.2 4.7.4 4 .7c-.9.4-1.7 1-2.4 1.7C.9 3.1.3 3.9 0 4.8c-.3.7-.5 1.7-.6 3C-.7 9 .7 9.3.7 12s0 3 .1 4.2c.1 1.3.3 2.3.6 3 .3.9.9 1.7 1.6 2.4.7.7 1.5 1.3 2.4 1.6.7.3 1.7.5 3 .6 1.2.1 1.6.1 4.9.1s3.6 0 4.9-.1c1.3-.1 2.3-.3 3-.6.9-.3 1.7-.9 2.4-1.6.7-.7 1.3-1.5 1.6-2.4.3-.7.5-1.7.6-3 .1-1.2.1-1.6.1-4.9s0-3.6-.1-4.9c-.1-1.3-.3-2.3-.6-3-.3-.9-.9-1.7-1.6-2.4C21.1 1.6 20.3 1 19.4.7c-.7-.3-1.7-.5-3-.6C15.6 0 15.2 0 12 0z"/> <path d="M12 5.8a6.2 6.2 0 1 0 0 12.4A6.2 6.2 0 0 0 12 5.8zm0 10.2a4 4 0 1 1 0-8.1 4 4 0 0 1 0 8.1zM18.4 4.6a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/>  
-          </svg> @giovanni.fg </a>  
-          <!-- LinkedIn -->  
-          <a href="https://linkedin.com/in/giovanni-fg" target="_blank" class="text-blue-400 hover:text-blue-300 flex items-center gap-1">  
-            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-5 h-5">  
-              <path d="M4.98 3.5C4.98 5 3.9 6 2.5 6S0 5 0 3.5 1.12 1 2.5 1s2.48 1 2.48 2.5zM.5 8h4V24h-4V8zM8.5 8h3.8v2.2h.1c.5-.9 1.8-1.9 3.7-1.9 3.9 0 4.6 2.5 4.6 5.7V24h-4v-7.8c0-1.9 0-4.4-2.7-4.4-2.7 0-3.1 2.1-3.1 4.2V24h-4V8z"/>  
-            </svg>  
-            giovanni-fg  
-          </a>  
-        </p>  
-    </div>
 </body>
 </html>
 
