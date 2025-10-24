@@ -11,19 +11,22 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Sortable.js para Drag and Drop -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-<!-- Favicon (Ícone da Aba) -->
+    <!-- Favicon (Ícone da Aba) -->
     <link rel="icon" type="image/png" href="logoGrafico.png">
     <style>
         body { background-color: #0f172a; color: #e2e8f0; font-family: 'Inter', sans-serif; }
         .card { background-color: #1e293b; border-radius: 0.75rem; padding: 1.5rem; border: 1px solid #334155; display: flex; flex-direction: column; transition: all 0.3s ease-in-out; }
         .card-title { color: #94a3b8; font-weight: 500; }
-        .card-value { color: #f1f5f9; font-size: 1.75rem; font-weight: 700; } /* Fonte ajustada */
+        .card-value { color: #f1f5f9; font-size: 1.75rem; font-weight: 700; }
         .chart-container { position: relative; flex-grow: 1; min-height: 350px; }
         #file-drop-zone { border: 2px dashed #334155; border-radius: 0.75rem; padding: 2rem; text-align: center; cursor: pointer; transition: background-color 0.2s, border-color 0.2s; }
         #file-drop-zone:hover, #file-drop-zone.dragover { background-color: #1e293b; border-color: #4f46e5; }
-        .filter-select, .filter-input, .search-input { background-color: #334155; border: 1px solid #475569; color: #e2e8f0; border-radius: 0.375rem; padding: 0.5rem; width: 100%; }
-        .chart-type-selector, .category-selector { background-color: #334155; border: 1px solid #475569; color: #cbd5e1; border-radius: 0.375rem; padding: 0.25rem 0.5rem; font-size: 0.875rem; }
+        .form-input, .filter-select, .filter-input, .search-input { background-color: #334155; border: 1px solid #475569; color: #e2e8f0; border-radius: 0.375rem; padding: 0.5rem; width: 100%; }
+        .chart-type-selector, .category-selector, .metric-selector { background-color: #334155; border: 1px solid #475569; color: #cbd5e1; border-radius: 0.375rem; padding: 0.25rem 0.5rem; font-size: 0.875rem; }
+        .chart-type-selector:disabled { opacity: 0.5; cursor: not-allowed; }
         input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8); }
         .spinner { border: 4px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top: 4px solid #4f46e5; width: 32px; height: 32px; animation: spin 1s linear infinite; margin: 0 auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -32,7 +35,7 @@
         .pagination-btn { background-color: #334155; border: 1px solid #475569; color: #e2e8f0; padding: 0.5rem 1rem; border-radius: 0.375rem; }
         .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .pagination-btn.active { background-color: #4f46e5; }
-        
+
         /* Export Specific Styles */
         .export-render .card-value { font-size: 1.5rem !important; overflow-wrap: break-word; }
         .export-render .card { page-break-inside: avoid; }
@@ -45,13 +48,137 @@
         .custom-checkbox { appearance: none; -webkit-appearance: none; height: 1.25rem; width: 1.25rem; background-color: #475569; border-radius: 0.25rem; cursor: pointer; display: inline-block; position: relative; flex-shrink: 0; }
         .custom-checkbox:checked { background-color: #4f46e5; }
         .custom-checkbox:checked::after { content: '\f00c'; font-family: 'Font Awesome 6 Free'; font-weight: 900; color: white; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 0.8rem; }
+
+        /* Modal */
+        .modal { background-color: rgba(15, 23, 42, 0.8); backdrop-filter: blur(4px); }
+        .modal-content { background-color: #1e293b; max-height: 90vh; }
+        .modal-tab { padding: 0.75rem 1rem; cursor: pointer; border-bottom: 2px solid transparent; }
+        .modal-tab.active { color: #4f46e5; border-color: #4f46e5; }
+        .modal-tab-content { display: none; }
+        .modal-tab-content.active { display: block; }
+
+        /* SortableJS */
+        .column-item { background-color: #334155; padding: 0.75rem; border-radius: 0.375rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.75rem; }
+        .drag-handle { cursor: move; color: #94a3b8; }
+        .sortable-ghost { background-color: #4f46e5; opacity: 0.5; }
+
+        /* Switch Toggle */
+        .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #475569; transition: .4s; border-radius: 28px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #4f46e5; }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        /* Cores Variação */
+        .delta-positive { color: #22c55e; /* green-500 */ }
+        .delta-negative { color: #ef4444; /* red-500 */ }
+        .delta-neutral { color: #94a3b8; /* slate-400 */ }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body class="p-4 sm:p-6 lg:p-8 pb-20">
-    <div id="loading-overlay" class="fixed inset-0 bg-slate-900 bg-opacity-75 z-50 flex items-center justify-center hidden">
+    <!-- Overlay de Loading -->
+    <div id="loading-overlay" class="fixed inset-0 bg-slate-900 bg-opacity-75 z-[60] flex items-center justify-center hidden">
         <div class="text-center"><div class="spinner"></div><p class="mt-4 text-white">Gerando...</p></div>
     </div>
+
+    <!-- Toast de Notificação -->
+    <div id="toast-notification" class="fixed top-5 right-5 bg-green-600 text-white py-2 px-4 rounded-lg shadow-lg z-[70] hidden transition-all duration-300 transform translate-x-full">
+        <i class="fas fa-check-circle mr-2"></i>
+        <span id="toast-message"></span>
+    </div>
+
+    <!-- Modal de Personalização de Visão -->
+    <div id="view-modal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+        <div class="modal-content w-full max-w-3xl rounded-lg shadow-2xl flex flex-col">
+            <!-- Cabeçalho do Modal -->
+            <div class="flex justify-between items-center p-4 border-b border-slate-700">
+                <h2 class="text-xl font-bold text-white">Personalizar Visão de Dados</h2>
+                <button id="view-modal-close-btn" class="text-slate-400 hover:text-white text-3xl leading-none">&times;</button>
+            </div>
+
+            <!-- Abas -->
+            <div class="flex border-b border-slate-700 px-4">
+                <button class="modal-tab active" data-tab="tab-display">Exibir/Ocultar</button>
+                <button class="modal-tab" data-tab="tab-add">Adicionar Colunas</button>
+                <button class="modal-tab" data-tab="tab-presets">Predefinições</button>
+            </div>
+
+            <!-- Conteúdo das Abas -->
+            <div class="p-6 overflow-y-auto">
+                <!-- Aba 1: Exibir/Ocultar -->
+                <div id="tab-display" class="modal-tab-content active">
+                    <input type="search" id="modal-column-search" placeholder="Buscar coluna..." class="form-input mb-4">
+                    <div id="modal-column-list" class="max-h-[40vh] overflow-y-auto">
+                        <!-- Itens da coluna serão injetados aqui -->
+                    </div>
+                </div>
+
+                <!-- Aba 2: Adicionar Colunas -->
+                <div id="tab-add" class="modal-tab-content">
+                    <!-- Coluna Calculada -->
+                    <h3 class="font-semibold text-lg mb-3">Criar Coluna Calculada (Beta)</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border border-slate-700 rounded-lg">
+                        <div>
+                            <label for="calc-col-name" class="block text-sm font-medium text-slate-300 mb-1">Nome da Coluna</label>
+                            <input type="text" id="calc-col-name" placeholder="Ex: Taxa de Conversão" class="form-input">
+                        </div>
+                        <div>
+                            <label for="calc-col-type" class="block text-sm font-medium text-slate-300 mb-1">Formato</label>
+                            <select id="calc-col-type" class="form-input">
+                                <option value="number">Número (1.234)</option>
+                                <option value="currency">Moeda (R$ 1.234,56)</option>
+                                <option value="percent">Porcentagem (12,34%)</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="calc-col-formula" class="block text-sm font-medium text-slate-300 mb-1">Fórmula</label>
+                            <input type="text" id="calc-col-formula" placeholder="Ex: [Leads] / [Cliques]" class="form-input font-mono">
+                            <p class="text-xs text-slate-400 mt-1">Use colchetes [ ] com o nome exato da coluna. Suporta: + - * /</p>
+                            <p id="calc-col-error" class="text-xs text-red-400 mt-1 hidden"></p>
+                        </div>
+                        <div class="md:col-span-2 text-right">
+                            <button id="calc-col-add-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Adicionar Coluna</button>
+                        </div>
+                    </div>
+
+                    <!-- Colunas Ocultas do CSV -->
+                    <h3 class="font-semibold text-lg mt-6 mb-3">Colunas Disponíveis no CSV</h3>
+                    <div id="modal-hidden-csv-cols" class="max-h-[20vh] overflow-y-auto p-4 bg-slate-800 rounded-lg">
+                        <!-- Colunas ocultas do CSV aqui -->
+                        <p class="text-slate-400">Nenhuma coluna oculta encontrada.</p>
+                    </div>
+                </div>
+
+                <!-- Aba 3: Predefinições -->
+                <div id="tab-presets" class="modal-tab-content">
+                    <h3 class="font-semibold text-lg mb-3">Salvar Visão Atual</h3>
+                    <div class="flex gap-2">
+                        <input type="text" id="preset-save-name" placeholder="Nome da visão (Ex: Performance)" class="form-input flex-grow">
+                        <button id="preset-save-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors flex-shrink-0">Salvar</button>
+                    </div>
+
+                    <h3 class="font-semibold text-lg mt-6 mb-3">Carregar Visão</h3>
+                    <div id="preset-list" class="max-h-[30vh] overflow-y-auto space-y-2">
+                        <!-- Lista de presets salvos -->
+                        <p class="text-slate-400">Nenhuma predefinição salva.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rodapé do Modal -->
+            <div class="flex justify-between items-center p-4 border-t border-slate-700 bg-slate-800/50 rounded-b-lg">
+                <button id="view-modal-reset-btn" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Resetar Padrão</button>
+                <div>
+                    <button id="view-modal-cancel-btn" class="bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded-lg transition-colors mr-2">Cancelar</button>
+                    <button id="view-modal-apply-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Aplicar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conteúdo Principal -->
     <div class="container mx-auto">
         <header class="flex flex-col sm:flex-row justify-between items-center mb-8">
             <div class="flex items-center gap-4">
@@ -60,6 +187,7 @@
             </div>
             <div class="flex items-center gap-4 mt-4 sm:mt-0">
                 <div id="export-buttons" class="flex items-center gap-4 hidden">
+                    <button id="download-csv-btn" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg cursor-pointer transition-colors"><i class="fas fa-file-csv mr-2"></i> Baixar CSV (Visão)</button>
                     <button id="download-image-btn" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded-lg cursor-pointer transition-colors"><i class="fas fa-file-image mr-2"></i> Baixar Imagem</button>
                     <button id="download-pdf-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg cursor-pointer transition-colors"><i class="fas fa-file-pdf mr-2"></i> Baixar PDF</button>
                 </div>
@@ -67,78 +195,364 @@
                 <input id="file-upload" type="file" class="hidden" accept=".csv">
             </div>
         </header>
+
         <div id="upload-section" class="mb-8">
             <div id="file-drop-zone"><i class="fas fa-file-csv fa-3x text-slate-500 mb-4"></i><p class="text-slate-400" id="drop-zone-text">Arraste e solte seu arquivo CSV aqui, ou clique para selecionar.</p><p id="file-name" class="text-indigo-400 mt-2"></p></div>
         </div>
+
         <div id="dashboard-content" class="hidden">
             <div id="printable-content">
+                <!-- Filtros -->
                 <div id="filters-section" class="card mb-8">
-                    <h2 class="font-bold text-lg mb-4">Filtros Dinâmicos</h2>
-                    <div id="dynamic-filters-container" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4"></div>
-                    <div id="date-filter-container" class="flex flex-col sm:flex-row gap-4 items-end pt-4 border-t border-slate-700">
-                        <div class="w-full flex flex-col gap-1"><label>Período</label><div class="flex items-center gap-2 bg-slate-700/50 p-2 rounded-lg"><span class="text-slate-400">De:</span><input type="date" id="filter-start-date" class="filter-input bg-transparent border-0 p-0"><span class="text-slate-400">Até:</span><input type="date" id="filter-end-date" class="filter-input bg-transparent border-0 p-0"></div></div>
-                        <button id="clear-filters-btn" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded-lg transition-colors w-full sm:w-auto flex-shrink-0">Limpar</button>
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                        <h2 class="font-bold text-lg flex-shrink-0">Filtros Dinâmicos</h2>
+                        <button id="open-view-modal-btn" class="bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded-lg transition-colors w-full sm:w-auto">
+                            <i class="fas fa-cog mr-2"></i>Personalizar Visão
+                        </button>
+                    </div>
+                    <div id="dynamic-filters-container" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                        <!-- Filtros dinâmicos (Campanha, Cidade, Empreendimento...) serão injetados aqui -->
+                        <p class="text-slate-400 md:col-span-4">Nenhum filtro ativo. Personalize a visão para adicionar filtros.</p>
+                    </div>
+
+                    <!-- Filtros de Data A e B -->
+                    <div id="date-filter-section" class="pt-4 border-t border-slate-700">
+                        <div id="date-filter-container-A" class="flex flex-col sm:flex-row gap-4 items-end">
+                            <!-- Período A -->
+                            <div class="w-full flex flex-col gap-1">
+                                <label class="text-sm font-medium">Período A</label>
+                                <div class="flex items-center gap-2 bg-slate-700/50 p-2 rounded-lg">
+                                    <span class="text-slate-400">De:</span><input type="date" id="filter-start-date-A" class="filter-input bg-transparent border-0 p-0">
+                                    <span class="text-slate-400">Até:</span><input type="date" id="filter-end-date-A" class="filter-input bg-transparent border-0 p-0">
+                                </div>
+                            </div>
+                            <!-- Switch Comparar & Ocultar B -->
+                            <div class="flex gap-4 items-end flex-shrink-0 w-full sm:w-auto">
+                                <div class="flex flex-col gap-1 items-center sm:items-start">
+                                    <label for="compare-toggle-checkbox" class="text-sm font-medium">Comparar</label>
+                                    <label class="switch">
+                                        <input type="checkbox" id="compare-toggle-checkbox">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <button id="toggle-comparison-details-btn" class="hidden bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm flex-grow sm:flex-grow-0">
+                                    <i class="fas fa-eye-slash mr-1"></i> Ocultar B
+                                </button>
+                            </div>
+                            <!-- Limpar -->
+                            <button id="clear-filters-btn" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded-lg transition-colors w-full sm:w-auto flex-shrink-0">Limpar</button>
+                        </div>
+
+                        <!-- Período B (Comparação) -->
+                        <div id="date-filter-container-B" class="hidden flex-col sm:flex-row gap-4 items-end mt-4">
+                            <div class="w-full flex flex-col gap-1">
+                                <label class="text-sm font-medium">Período B (Comparação)</label>
+                                <div class="flex items-center gap-2 bg-slate-700/50 p-2 rounded-lg">
+                                    <span class="text-slate-400">De:</span><input type="date" id="filter-start-date-B" class="filter-input bg-transparent border-0 p-0">
+                                    <span class="text-slate-400">Até:</span><input type="date" id="filter-end-date-B" class="filter-input bg-transparent border-0 p-0">
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-6 mb-8">
-                    <div class="card"><p class="card-title">Total Investido</p><p id="total-investido" class="card-value">R$ 0</p></div>
-                    <div class="card" id="card-leads"><p class="card-title">Total de Leads</p><p id="total-leads" class="card-value">0</p></div>
-                    <div class="card"><p class="card-title">Impressões</p><p id="total-impressoes" class="card-value">0</p></div>
-                    <div class="card"><p class="card-title">Cliques</p><p id="total-cliques" class="card-value">0</p></div>
-                    <div class="card"><p class="card-title">CTR</p><p id="ctr" class="card-value">0%</p></div>
-                    <div class="card" id="card-cpl"><p class="card-title">CPL</p><p id="cpl" class="card-value">R$ 0</p></div>
-                    <div class="card hidden" id="card-cpc"><p class="card-title">CPC Médio</p><p id="cpc" class="card-value">R$ 0</p></div>
-                    <div class="card hidden" id="card-cpm"><p class="card-title">CPM Médio</p><p id="cpm" class="card-value">R$ 0</p></div>
+
+                <!-- Cards de KPI (Dinâmicos) -->
+                <div id="kpi-card-container" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6 mb-8">
+                    <!-- KPIs serão injetados aqui -->
                 </div>
+
+                <!-- AI Insights -->
                 <div class="card mb-8"><h2 class="font-bold text-lg mb-2">Insights com IA</h2><div id="ai-insights-content" class="text-slate-300 whitespace-pre-wrap">Clique no botão para gerar uma análise.</div><div id="ai-loading" class="hidden my-4"><div class="spinner"></div></div><button id="generate-ai-insights" class="mt-4 bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded-lg transition-colors w-full sm:w-auto self-start"><i class="fas fa-wand-magic-sparkles mr-2"></i>Gerar Análise</button></div>
+
+                <!-- Gráficos -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                    <div class="card" id="timeline-card"><div class="flex justify-between items-center mb-4"><h2 class="font-bold text-lg">Evolução Temporal</h2><select id="timeline-chart-type" class="chart-type-selector"><option value="line">Linha</option><option value="bar">Barra</option></select></div><div class="chart-container"><canvas id="timeline-chart"></canvas></div></div>
-                    <div class="card"><div class="flex justify-between items-center mb-4"><h2 class="font-bold text-lg">Análise por Categoria 1</h2><div class="flex items-center gap-2"><select id="chart1-category" class="category-selector"></select><select id="chart1-type" class="chart-type-selector"><option value="bar">Barra</option><option value="pie">Pizza</option></select><button id="chart1-labels-toggle" class="p-2 bg-slate-700 rounded-md hover:bg-slate-600 transition-colors hidden" title="Mostrar/Ocultar Rótulos"><i class="fas fa-tags"></i></button></div></div><div class="chart-container"><canvas id="chart1"></canvas></div></div>
-                    <div class="card"><div class="flex justify-between items-center mb-4"><h2 class="font-bold text-lg">Análise por Categoria 2</h2><div class="flex items-center gap-2"><select id="chart2-category" class="category-selector"></select><select id="chart2-type" class="chart-type-selector"><option value="bar">Barra</option><option value="doughnut">Rosca</option></select><button id="chart2-labels-toggle" class="p-2 bg-slate-700 rounded-md hover:bg-slate-600 transition-colors hidden" title="Mostrar/Ocultar Rótulos"><i class="fas fa-tags"></i></button></div></div><div class="chart-container"><canvas id="chart2"></canvas></div></div>
-                    <div class="card"><div class="flex justify-between items-center mb-4"><h2 class="font-bold text-lg">Análise por Categoria 3</h2><div class="flex items-center gap-2"><select id="chart3-category" class="category-selector"></select><select id="chart3-type" class="chart-type-selector"><option value="bar">Barra</option><option value="line">Linha</option></select><button id="chart3-labels-toggle" class="p-2 bg-slate-700 rounded-md hover:bg-slate-600 transition-colors hidden" title="Mostrar/Ocultar Rótulos"><i class="fas fa-tags"></i></button></div></div><div class="chart-container"><canvas id="chart3"></canvas></div></div>
+                    <div class="card" id="timeline-card">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+                            <h2 id="timeline-chart-title" class="font-bold text-lg min-w-0 flex-shrink mr-2">Evolução Temporal</h2>
+                            <select id="timeline-chart-type" class="chart-type-selector w-full sm:w-auto"><option value="line">Linha</option><option value="bar">Barra</option></select>
+                        </div>
+                        <div class="chart-container"><canvas id="timeline-chart"></canvas></div>
+                    </div>
+
+                    <div class="card">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+                             <h2 id="chart1-title" class="font-bold text-lg min-w-0 flex-shrink mr-2">Análise por Categoria 1</h2>
+                             <div class="flex items-center gap-2 flex-wrap justify-end w-full sm:w-auto">
+                                 <select id="chart1-metric" class="metric-selector"></select>
+                                 <span class="text-slate-400 text-sm">por</span>
+                                 <select id="chart1-category" class="category-selector"></select>
+                                 <select id="chart1-type" class="chart-type-selector"><option value="bar">Barra</option><option value="pie">Pizza</option></select>
+                                 <button id="chart1-labels-toggle" class="p-2 bg-slate-700 rounded-md hover:bg-slate-600 transition-colors hidden" title="Mostrar/Ocultar Rótulos"><i class="fas fa-tags"></i></button>
+                             </div>
+                        </div>
+                        <div class="chart-container"><canvas id="chart1"></canvas></div>
+                    </div>
+
+                    <div class="card">
+                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+                             <h2 id="chart2-title" class="font-bold text-lg min-w-0 flex-shrink mr-2">Análise por Categoria 2</h2>
+                             <div class="flex items-center gap-2 flex-wrap justify-end w-full sm:w-auto">
+                                 <select id="chart2-metric" class="metric-selector"></select>
+                                 <span class="text-slate-400 text-sm">por</span>
+                                 <select id="chart2-category" class="category-selector"></select>
+                                 <select id="chart2-type" class="chart-type-selector"><option value="bar">Barra</option><option value="doughnut">Rosca</option></select>
+                                 <button id="chart2-labels-toggle" class="p-2 bg-slate-700 rounded-md hover:bg-slate-600 transition-colors hidden" title="Mostrar/Ocultar Rótulos"><i class="fas fa-tags"></i></button>
+                             </div>
+                        </div>
+                        <div class="chart-container"><canvas id="chart2"></canvas></div>
+                    </div>
+
+                    <div class="card">
+                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+                             <h2 id="chart3-title" class="font-bold text-lg min-w-0 flex-shrink mr-2">Análise por Categoria 3</h2>
+                             <div class="flex items-center gap-2 flex-wrap justify-end w-full sm:w-auto">
+                                 <select id="chart3-metric" class="metric-selector"></select>
+                                 <span class="text-slate-400 text-sm">por</span>
+                                 <select id="chart3-category" class="category-selector"></select>
+                                 <select id="chart3-type" class="chart-type-selector"><option value="bar">Barra</Doutor Fran>Linha</option></select>
+                                 <button id="chart3-labels-toggle" class="p-2 bg-slate-700 rounded-md hover:bg-slate-600 transition-colors hidden" title="Mostrar/Ocultar Rótulos"><i class="fas fa-tags"></i></button>
+                             </div>
+                        </div>
+                        <div class="chart-container"><canvas id="chart3"></canvas></div>
+                    </div>
                 </div>
-                <div class="card"><div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4"><h2 class="font-bold text-lg">Ranking de Campanhas</h2><input type="search" id="campaign-search" placeholder="Pesquisar campanha..." class="search-input md:w-1/3"></div><div class="overflow-x-auto"><table class="w-full text-left"><thead id="campaign-ranking-head"></thead><tbody id="campaign-ranking-body"></tbody></table></div><div id="pagination-controls" class="mt-4 flex justify-center items-center gap-2"></div></div>
+
+                <!-- Tabela -->
+                <div class="card"><div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4"><h2 class="font-bold text-lg">Ranking Detalhado</h2><input type="search" id="campaign-search" placeholder="Pesquisar..." class="search-input md:w-1/3"></div><div class="overflow-x-auto"><table class="w-full text-left"><thead id="campaign-ranking-head"></thead><tbody id="campaign-ranking-body"></tbody></table></div><div id="pagination-controls" class="mt-4 flex justify-center items-center gap-2"></div></div>
             </div>
         </div>
     </div>
-    <div class="fixed bottom-0 left-0 right-0 z-50 w-full text-center py-4 bg-gray-800 shadow-lg text-white">          <p class="text-sm flex justify-center items-center gap-4">            Desenvolvido por Giovanni Fuentes Giannetti:             <!-- Instagram -->            <a href="https://instagram.com/giovanni.fg" target="_blank" class="text-pink-400 hover:text-pink-300 flex items-center gap-1"> <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-5 h-5"> <path d="M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 1.9.3 2.3.5.6.2 1 .6 1.4 1.1.4.4.9 1 1.1 1.6.2.4.4 1.1.5 2.3.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c-.1 1.2-.3 1.9-.5 2.3-.2.6-.6 1-1.1 1.4-.4.4-1 .9-1.6 1.1-.4.2-1.1.4-2.3.5-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-1.9-.3-2.3-.5-.6-.2-1-.6-1.4-1.1-.4-.4-.9-1-1.1-1.6-.2-.4-.4-1.1-.5-2.3C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.9c.1-1.2.3-1.9.5-2.3.2-.6.6-1 1.1-1.4.4-.4 1-.9 1.6-1.1.4-.2 1.1.4 2.3.5C8.4 2.2 8.8 2.2 12 2.2m0-2.2C8.7 0 8.3 0 7 .1 5.7.2 4.7.4 4 .7c-.9.4-1.7 1-2.4 1.7C.9 3.1.3 3.9 0 4.8c-.3.7-.5 1.7-.6 3C-.7 9 .7 9.3.7 12s0 3 .1 4.2c.1 1.3.3 2.3.6 3 .3.9.9 1.7 1.6 2.4.7.7 1.5 1.3 2.4 1.6.7.3 1.7.5 3 .6 1.2.1 1.6.1 4.9.1s3.6 0 4.9-.1c1.3-.1 2.3-.3 3-.6.9-.3 1.7-.9 2.4-1.6.7-.7 1.3-1.5 1.6-2.4.3-.7.5-1.7.6-3 .1-1.2.1-1.6.1-4.9s0-3.6-.1-4.9c-.1-1.3-.3-2.3-.6-3-.3-.9-.9-1.7-1.6-2.4C21.1 1.6 20.3 1 19.4.7c-.7-.3-1.7-.5-3-.6C15.6 0 15.2 0 12 0z"/> <path d="M12 5.8a6.2 6.2 0 1 0 0 12.4A6.2 6.2 0 0 0 12 5.8zm0 10.2a4 4 0 1 1 0-8.1 4 4 0 0 1 0 8.1zM18.4 4.6a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/>            </svg> @giovanni.fg </a>            <!-- LinkedIn -->            <a href="https://linkedin.com/in/giovanni-fg" target="_blank" class="text-blue-400 hover:text-blue-300 flex items-center gap-1">              <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-5 h-5">                <path d="M4.98 3.5C4.98 5 3.9 6 2.5 6S0 5 0 3.5 1.12 1 2.5 1s2.48 1 2.48 2.5zM.5 8h4V24h-4V8zM8.5 8h3.8v2.2h.1c.5-.9 1.8-1.9 3.7-1.9 3.9 0 4.6 2.5 4.6 5.7V24h-4v-7.8c0-1.9 0-4.4-2.7-4.4-2.7 0-3.1 2.1-3.1 4.2V24h-4V8z"/>              </svg>              giovanni-fg            </a>          </p>      </div>
+
+    <!-- Rodapé -->
+    <div class="fixed bottom-0 left-0 right-0 z-50 w-full text-center py-4 bg-gray-800 shadow-lg text-white">
+        <p class="text-sm flex justify-center items-center gap-4">
+            Desenvolvido por Giovanni Fuentes Giannetti:
+            <!-- Instagram -->
+            <a href="https://instagram.com/giovanni.fg" target="_blank" class="text-pink-400 hover:text-pink-300 flex items-center gap-1"> <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-5 h-5"> <path d="M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 1.9.3 2.3.5.6.2 1 .6 1.4 1.1.4.4.9 1 1.1 1.6.2.4.4 1.1.5 2.3.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c-.1 1.2-.3 1.9-.5 2.3-.2.6-.6 1-1.1 1.4-.4.4-1 .9-1.6 1.1-.4.2-1.1.4-2.3.5-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-1.9-.3-2.3-.5-.6-.2-1-.6-1.4-1.1-.4-.4-.9-1-1.1-1.6-.2.4-.4-1.1-.5-2.3C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.9c.1-1.2.3-1.9.5-2.3.2-.6.6-1 1.1-1.4.4-.4 1-.9 1.6-1.1.4-.2 1.1.4 2.3.5C8.4 2.2 8.8 2.2 12 2.2m0-2.2C8.7 0 8.3 0 7 .1 5.7.2 4.7.4 4 .7c-.9.4-1.7 1-2.4 1.7C.9 3.1.3 3.9 0 4.8c-.3.7-.5 1.7-.6 3C-.7 9 .7 9.3.7 12s0 3 .1 4.2c.1 1.3.3 2.3.6 3 .3.9.9 1.7 1.6 2.4.7.7 1.5 1.3 2.4 1.6.7.3 1.7.5 3 .6 1.2.1 1.6.1 4.9.1s3.6 0 4.9-.1c1.3-.1 2.3-.3 3-.6.9-.3 1.7-.9 2.4-1.6.7-.7 1.3-1.5 1.6-2.4.3-.7.5-1.7.6-3 .1-1.2.1-1.6.1-4.9s0-3.6-.1-4.9c-.1-1.3-.3-2.3-.6-3-.3-.9-.9-1.7-1.6-2.4C21.1 1.6 20.3 1 19.4.7c-.7-.3-1.7-.5-3-.6C15.6 0 15.2 0 12 0z"/> <path d="M12 5.8a6.2 6.2 0 1 0 0 12.4A6.2 6.2 0 0 0 12 5.8zm0 10.2a4 4 0 1 1 0-8.1 4 4 0 0 1 0 8.1zM18.4 4.6a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/> </svg> @giovanni.fg </a>
+            <!-- LinkedIn -->
+            <a href="https://linkedin.com/in/giovanni-fg" target="_blank" class="text-blue-400 hover:text-blue-300 flex items-center gap-1"> <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-5 h-5"> <path d="M4.98 3.5C4.98 5 3.9 6 2.5 6S0 5 0 3.5 1.12 1 2.5 1s2.48 1 2.48 2.5zM.5 8h4V24h-4V8zM8.5 8h3.8v2.2h.1c.5-.9 1.8-1.9 3.7-1.9 3.9 0 4.6 2.5 4.6 5.7V24h-4v-7.8c0-1.9 0-4.4-2.7-4.4-2.7 0-3.1 2.1-3.1 4.2V24h-4V8z"/> </svg> giovanni-fg </a>
+        </p>
+    </div>
 <script>
     const { jsPDF } = window.jspdf;
     Chart.register(ChartDataLabels);
     Chart.defaults.plugins.datalabels.display = false;
     Chart.defaults.color = '#94a3b8'; Chart.defaults.borderColor = '#334155'; Chart.defaults.plugins.legend.position = 'bottom'; Chart.defaults.maintainAspectRatio = false;
-    
-    let originalData = [], filteredData = [], charts = {}, categoricalColumns = [];
-    const GEMINI_API_KEY = 'AIzaSyA0LecQ2UW0nZvLTlnp-Utp4NHxVeIfvX8';
-    const chartColors = ['#4f46e5', '#10b981', '#f59e0b', '#3b82f6', '#ec4899', '#8b5cf6'];
+
+    let originalData = [], filteredData = [], comparisonData = [], charts = {};
+    const GEMINI_API_KEY = 'AIzaSyA0LecQ2UW0nZvLTlnp-Utp4NHxVeIfvX8'; // Consider securely managing API keys
+    const chartColors = ['#4f46e5', '#10b981', '#f59e0b', '#3b82f6', '#ec4899', '#8b5cf6', '#ef4444', '#22d3ee'];
+
+    // --- Elementos do DOM ---
     const elements = {
         fileUpload: document.getElementById('file-upload'), dropZone: document.getElementById('file-drop-zone'),
         fileName: document.getElementById('file-name'), uploadSection: document.getElementById('upload-section'),
         dashboardContent: document.getElementById('dashboard-content'), clearFiltersBtn: document.getElementById('clear-filters-btn'),
         dynamicFiltersContainer: document.getElementById('dynamic-filters-container'),
         dropZoneText: document.getElementById('drop-zone-text'), downloadPdfBtn: document.getElementById('download-pdf-btn'),
-        downloadImageBtn: document.getElementById('download-image-btn'), exportButtons: document.getElementById('export-buttons'),
+        downloadImageBtn: document.getElementById('download-image-btn'), downloadCsvBtn: document.getElementById('download-csv-btn'),
+        exportButtons: document.getElementById('export-buttons'),
         aiBtn: document.getElementById('generate-ai-insights'), aiContent: document.getElementById('ai-insights-content'),
         aiLoading: document.getElementById('ai-loading'), loadingOverlay: document.getElementById('loading-overlay'),
-        campaignSearch: document.getElementById('campaign-search'), paginationControls: document.getElementById('pagination-controls')
+        campaignSearch: document.getElementById('campaign-search'), paginationControls: document.getElementById('pagination-controls'),
+        kpiCardContainer: document.getElementById('kpi-card-container'),
+        // Comparação
+        compareToggle: document.getElementById('compare-toggle-checkbox'),
+        toggleComparisonDetailsBtn: document.getElementById('toggle-comparison-details-btn'),
+        comparisonDateContainer: document.getElementById('date-filter-container-B'),
+        filterStartDateA: document.getElementById('filter-start-date-A'),
+        filterEndDateA: document.getElementById('filter-end-date-A'),
+        filterStartDateB: document.getElementById('filter-start-date-B'),
+        filterEndDateB: document.getElementById('filter-end-date-B'),
+        timelineChartTitle: document.getElementById('timeline-chart-title'),
+        // Modal
+        viewModal: document.getElementById('view-modal'),
+        openViewModalBtn: document.getElementById('open-view-modal-btn'),
+        viewModalCloseBtn: document.getElementById('view-modal-close-btn'),
+        viewModalCancelBtn: document.getElementById('view-modal-cancel-btn'),
+        viewModalApplyBtn: document.getElementById('view-modal-apply-btn'),
+        viewModalResetBtn: document.getElementById('view-modal-reset-btn'),
+        modalTabs: document.querySelectorAll('.modal-tab'),
+        modalTabContents: document.querySelectorAll('.modal-tab-content'),
+        modalColumnList: document.getElementById('modal-column-list'),
+        modalColumnSearch: document.getElementById('modal-column-search'),
+        // Aba "Adicionar"
+        calcColName: document.getElementById('calc-col-name'),
+        calcColType: document.getElementById('calc-col-type'),
+        calcColFormula: document.getElementById('calc-col-formula'),
+        calcColAddBtn: document.getElementById('calc-col-add-btn'),
+        calcColError: document.getElementById('calc-col-error'),
+        modalHiddenCsvCols: document.getElementById('modal-hidden-csv-cols'),
+        // Aba "Presets"
+        presetSaveName: document.getElementById('preset-save-name'),
+        presetSaveBtn: document.getElementById('preset-save-btn'),
+        presetList: document.getElementById('preset-list'),
+        // Toast
+        toast: document.getElementById('toast-notification'),
+        toastMessage: document.getElementById('toast-message'),
     };
-    let tableState = { currentPage: 1, rowsPerPage: 5, searchTerm: '', sortColumn: 'spend', sortDirection: 'desc' };
-    let has = { date: false, leads: false, cpc: false, cpm: false, spend: false, clicks: false, impressions: false };
-    let chartLabelsState = { chart1: false, chart2: false, chart3: false };
 
-    const formatCurrency = (v) => `R$ ${v.toFixed(2).replace('.', ',')}`;
-    const formatNumber = (v) => new Intl.NumberFormat('pt-BR').format(v);
+    // --- Estado da Aplicação ---
+    let tableState = { currentPage: 1, rowsPerPage: 5, searchTerm: '', sortColumn: 'campaignName', sortDirection: 'asc' };
+    let tableProcessedData = [];
+    let has = { date: false, campaign: false, spend: false, leads: false, clicks: false, impressions: false, cpc: false, cpm: false };
+    let chartLabelsState = { chart1: false, chart2: false, chart3: false };
+    let isComparisonActive = false;
+    let showComparisonDetails = true; // Controla visibilidade de B
+
+    /**
+     * @typedef {'number'|'currency'|'percent'|'string'|'date'} ColumnType
+     * @typedef {'csv'|'calculated'} ColumnSource
+     *
+     * @typedef {Object} ColumnDef
+     * @property {string} key - O identificador único (ex: 'spend', 'calc_cpl')
+     * @property {string} label - O nome exibido para o usuário (ex: 'Custo', 'CPL')
+     * @property {ColumnType} type - O tipo de dado para formatação
+     * @property {boolean} visible - Se deve ser exibido
+     * @property {boolean} [isFilterable] - Se for string, se pode ser usado como filtro
+     * @property {boolean} [pinned] - Se deve ser fixado (ex: em KPIs)
+     * @property {number} [order] - A ordem de exibição
+     * @property {ColumnSource} source - De onde o dado vem
+     * @property {string} [formula] - A fórmula, se source === 'calculated'
+     */
+
+    /** @type {ColumnDef[]} */
+    let baseColumnDefinitions = [];
+    /** @type {ColumnDef[]} */
+    let activeColumnDefinitions = [];
+    /** @type {ColumnDef[]} */
+    let modalColumnDefinitions = [];
+
+    /** @type {ViewPreset[]} */
+    let allPresets = [];
+    const PRESETS_LS_KEY = 'ap_view_presets_v1';
+    const LAST_VIEW_LS_KEY = 'ap_last_active_view_v1';
+
+    // --- Formatadores e Parsers ---
+
+    function formatValue(value, type) {
+        if (value === null || typeof value === 'undefined' || (typeof value === 'number' && isNaN(value))) return 'N/A';
+        try {
+            if (type === 'currency') return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+            if (type === 'percent') return `${(value * 100).toFixed(2).replace('.', ',')}%`;
+            if (type === 'number') {
+                if (Number.isInteger(value)) return new Intl.NumberFormat('pt-BR').format(value);
+                else return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
+            }
+        } catch (e) { console.error(`Error formatting value ${value} as ${type}:`, e); return value; }
+        return value;
+    }
+
+    function formatChartValue(context, metricDef) {
+        if (!metricDef) return context.raw;
+        let value = context.raw;
+        if (typeof value !== 'number') return value;
+        // Adjust formatter specifically for datalabels plugin
+        const chartType = context.chart.config.type;
+        if (chartType === 'pie' || chartType === 'doughnut') {
+            const total = context.chart.getDatasetMeta(0).total;
+            if (total === 0) return '0%';
+            const percentage = value / total;
+            // Return array for multi-line label
+            return [
+                formatValue(value, metricDef.type),
+                `(${formatValue(percentage, 'percent')})`
+            ];
+        }
+        return formatValue(value, metricDef.type);
+    }
+
+
+    const safePercentChange = (a, b) => {
+        if (a === null || b === null || typeof a !== 'number' || typeof b !== 'number') return null;
+        if (a === 0) return (b > 0) ? Infinity : 0;
+        return (b - a) / Math.abs(a);
+    };
+
+    function formatDeltaPercent(deltaPct) {
+        let deltaPctFormatted = '—';
+        let deltaColorClass = 'delta-neutral';
+        let deltaIconClass = 'fa-minus';
+        if (deltaPct === Infinity) {
+             deltaPctFormatted = '(Novo)';
+             deltaColorClass = 'delta-positive';
+             deltaIconClass = 'fa-arrow-up';
+        } else if (deltaPct !== null && isFinite(deltaPct)) {
+            deltaPctFormatted = `(${deltaPct > 0 ? '+' : ''}${formatValue(deltaPct, 'percent')})`;
+            if (deltaPct > 0) { deltaColorClass = 'delta-positive'; deltaIconClass = 'fa-arrow-up'; }
+            if (deltaPct < 0) { deltaColorClass = 'delta-negative'; deltaIconClass = 'fa-arrow-down'; }
+        }
+        // Reduzi o tamanho do ícone e margens
+        return `<span class="text-sm font-medium ${deltaColorClass}">
+                    <i class="fas ${deltaIconClass} mx-1 text-xs"></i>${deltaPctFormatted}
+                </span>`;
+    }
+
+
+    function getAggregationType(key) {
+        const lowerKey = key.toLowerCase();
+        if (lowerKey.includes('cpl') || lowerKey.includes('cpc') || lowerKey.includes('cpm') || lowerKey.includes('ctr') || lowerKey.includes('taxa')) return 'avg';
+        return 'sum';
+    }
+
+    /**
+     * [CORRIGIDO] Calcula uma métrica agregada a partir de um conjunto de dados,
+     * garantindo que taxas (CPL, CPC, etc.) sejam recalculadas a partir dos totais.
+     */
+    function aggregateMetric(data, metricDef) {
+        if (!data || data.length === 0) return 0;
+        
+        const key = metricDef.key;
+        
+        // Acumula os totais básicos E o somatório/contagem da métrica específica
+        const totals = data.reduce((acc, row) => {
+            acc.spend += (row.spend || 0);
+            acc.leads += (row.leads || 0);
+            acc.clicks += (row.clicks || 0);
+            acc.impressions += (row.impressions || 0);
+            
+            // Acumula a própria métrica (para casos de 'avg' ou 'sum' simples)
+            if (typeof row[key] === 'number' && isFinite(row[key])) {
+                acc.sum += row[key];
+                acc.count++;
+            }
+            return acc;
+        }, { spend: 0, leads: 0, clicks: 0, impressions: 0, sum: 0, count: 0 });
+
+        // Calcula métricas de taxa CORRETAMENTE a partir dos totais
+        if (key === 'cpl') {
+            return totals.leads > 0 ? totals.spend / totals.leads : 0;
+        }
+        if (key === 'cpc') {
+            return totals.clicks > 0 ? totals.spend / totals.clicks : 0;
+        }
+        if (key === 'cpm') {
+            return totals.impressions > 0 ? (totals.spend / totals.impressions) * 1000 : 0;
+        }
+        if (key === 'ctr') {
+            return totals.impressions > 0 ? totals.clicks / totals.impressions : 0;
+        }
+        
+        // Fallback para outras métricas (ex: colunas customizadas)
+        const aggType = getAggregationType(key);
+        if (aggType === 'avg') {
+            return totals.count > 0 ? totals.sum / totals.count : 0;
+        }
+        return totals.sum; // Default to sum
+    }
+
+
     const parseValue = (v) => { if (typeof v !== 'string' || v === '') return 0; const c = v.replace('R$', '').trim().replace(/\./g, '').replace(',', '.'); return isNaN(parseFloat(c)) ? 0 : parseFloat(c); };
     const parseInteger = (v) => { if (typeof v === 'number') return v; if (typeof v !== 'string' || v === '') return 0; const c = v.replace(/[^\d]/g, ''); const n = parseInt(c, 10); return isNaN(n) ? 0 : n; };
-    
+
     function findColumn(headers, possibleNames) {
         for (const name of possibleNames) {
-            const found = headers.find(h => h.toLowerCase().trim().includes(name.toLowerCase().trim()));
+            const found = headers.find(h => h && h.toLowerCase().trim().includes(name.toLowerCase().trim())); // Added check for h existence
             if (found) return found;
         }
         return null;
     }
-    
+
     function parseDate(dateStr) {
         if (!dateStr) return null;
         if (dateStr.includes('/')) { const parts = dateStr.split('/'); if (parts.length === 3) { const day = parseInt(parts[0], 10), month = parseInt(parts[1], 10), year = parseInt(parts[2], 10); if (day <= 31 && month <= 12 && year > 1900) return new Date(Date.UTC(year, month - 1, day)); } }
@@ -147,6 +561,23 @@
         return null;
     }
 
+    function detectColumnType(header, sampleValue) {
+        if (!header) return 'string'; // Handle empty header
+        const lowerHeader = header.toLowerCase().trim();
+        if (lowerHeader.includes('data') || lowerHeader.includes('date') || lowerHeader.includes('dia')) return 'date';
+        if (lowerHeader.includes('custo') || lowerHeader.includes('gasto') || lowerHeader.includes('investimento') || lowerHeader.includes('spend') || lowerHeader.includes('cost')) return 'currency';
+        const parsedSample = parseValue(sampleValue);
+        if (typeof sampleValue === 'string' && (sampleValue.startsWith('R$') || (sampleValue.includes(',') && !isNaN(parsedSample) && parsedSample !== 0))) return 'currency';
+        if (lowerHeader.includes('leads') || lowerHeader.includes('cliques') || lowerHeader.includes('impressões') || lowerHeader.includes('qtd') || lowerHeader.includes('quantidade')) return 'number';
+        if (!isNaN(parsedSample) && sampleValue && sampleValue.trim() !== '' && String(sampleValue).match(/^-?\d+([.,]\d+)?$/)) { // Added check for sampleValue existence
+            if (parsedSample > 0 && parsedSample < 1 && (lowerHeader.includes('taxa') || lowerHeader.includes('ctr'))) return 'percent';
+            return 'number';
+        }
+        return 'string';
+    }
+
+    // --- Handlers de Arquivo e Processamento de Dados ---
+
     elements.fileUpload.addEventListener('change', (e) => handleFile(e.target.files[0]));
     elements.dropZone.addEventListener('click', () => elements.fileUpload.click());
     elements.dropZone.addEventListener('dragover', (e) => { e.preventDefault(); elements.dropZone.classList.add('dragover'); });
@@ -154,285 +585,851 @@
     elements.dropZone.addEventListener('drop', (e) => { e.preventDefault(); elements.dropZone.classList.remove('dragover'); handleFile(e.dataTransfer.files[0]); });
 
     function handleFile(file) {
-        if (!file || file.type !== 'text/csv') return console.error('Tipo de arquivo inválido.');
+        if (!file || file.type !== 'text/csv') { console.error('Tipo de arquivo inválido.'); elements.dropZoneText.textContent = 'Erro: Tipo de arquivo inválido. Use .csv'; return; }
         elements.fileName.textContent = file.name; elements.dropZoneText.textContent = 'Processando...';
-        Papa.parse(file, { header: true, skipEmptyLines: true, complete: (r) => { processData(r.data, r.meta.fields); elements.uploadSection.classList.add('hidden'); elements.dashboardContent.classList.remove('hidden'); elements.exportButtons.classList.remove('hidden'); }, error: (err) => { console.error('Erro no PapaParse:', err); elements.dropZoneText.textContent = 'Erro ao ler o arquivo.'; }});
+        Papa.parse(file, { header: true, skipEmptyLines: true, complete: (r) => {
+            if (!r.data || r.data.length === 0 || !r.meta.fields || r.meta.fields.length === 0) {
+                 elements.dropZoneText.textContent = 'Erro: Arquivo CSV vazio, mal formatado ou sem cabeçalho.';
+                 return;
+            }
+            // Simple header validation (check for empty headers)
+            if (r.meta.fields.some(h => !h || h.trim() === '')) {
+                 elements.dropZoneText.textContent = 'Erro: O cabeçalho do CSV contém colunas sem nome.';
+                 return;
+            }
+            processData(r.data, r.meta.fields);
+            elements.uploadSection.classList.add('hidden'); elements.dashboardContent.classList.remove('hidden'); elements.exportButtons.classList.remove('hidden');
+        }, error: (err) => { console.error('Erro no PapaParse:', err); elements.dropZoneText.textContent = 'Erro ao ler o arquivo CSV.'; }});
     }
 
-    function processData(data, headers) {
-        const colNames = {
-            campaign: findColumn(headers, ['Campaign Name']),
-            date: findColumn(headers, ['Date', 'Data', 'Dia']),
-            spend: findColumn(headers, ['Spend', 'Valor gasto', 'Custo', 'Investimento', 'Amount spent', 'Cost', 'Gasto']),
-            leads: findColumn(headers, ['Action Leads', 'Leads']),
-            clicks: findColumn(headers, ['Clicks', 'Cliques']),
-            impressions: findColumn(headers, ['Impressions', 'Impressões']),
-            cpc: findColumn(headers, ['CPC']),
-            cpm: findColumn(headers, ['CPM'])
-        };
-        has = { date: !!colNames.date, leads: !!colNames.leads, cpc: !!colNames.cpc, cpm: !!colNames.cpm, spend: !!colNames.spend, clicks: !!colNames.clicks, impressions: !!colNames.impressions };
-        if (!has.spend) { console.warn('Aviso: Nenhuma coluna de custo/investimento foi encontrada.'); }
 
-        const primaryColumns = Object.values(colNames).filter(Boolean);
-        categoricalColumns = headers.filter(h => !primaryColumns.includes(h) && new Set(data.map(item => item[h])).size > 1 && new Set(data.map(item => item[h])).size < 50);
-        
+    function processData(data, headers) {
+        const validHeaders = headers.filter(h => h && h.trim() !== ''); // Filter out empty headers
+        if (validHeaders.length === 0) {
+             elements.dropZoneText.textContent = 'Erro: Nenhuma coluna válida encontrada no cabeçalho do CSV.';
+             return;
+        }
+
+        const colNames = {
+            campaign: findColumn(validHeaders, ['Campaign Name', 'Campanha']),
+            date: findColumn(validHeaders, ['Date', 'Data', 'Dia']),
+            spend: findColumn(validHeaders, ['Spend', 'Valor gasto', 'Custo', 'Investimento', 'Amount spent', 'Cost', 'Gasto']),
+            leads: findColumn(validHeaders, ['Action Leads', 'Leads', 'Resultados']),
+            clicks: findColumn(validHeaders, ['Clicks', 'Cliques']),
+            impressions: findColumn(validHeaders, ['Impressions', 'Impressões']),
+            cpc: findColumn(validHeaders, ['CPC']),
+            cpm: findColumn(validHeaders, ['CPM'])
+        };
+        has = { campaign: !!colNames.campaign, date: !!colNames.date, spend: !!colNames.spend, leads: !!colNames.leads, clicks: !!colNames.clicks, impressions: !!colNames.impressions, cpc: !!colNames.cpc, cpm: !!colNames.cpm };
+
         originalData = data.map(row => {
-            const entry = {
-                campaignName: row[colNames.campaign] || 'N/A', date: has.date ? parseDate(row[colNames.date]) : null,
-                spend: has.spend ? parseValue(row[colNames.spend]) : 0,
-                leads: has.leads ? parseInteger(row[colNames.leads]) : 0,
-                clicks: has.clicks ? parseInt(parseValue(row[colNames.clicks] || '0'), 10) : 0,
-                impressions: has.impressions ? parseInteger(row[colNames.impressions]) : 0,
-                cpc: has.cpc ? parseValue(row[colNames.cpc]) : 0,
-                cpm: has.cpm ? parseValue(row[colNames.cpm]) : 0
-            };
-            categoricalColumns.forEach(col => entry[col] = row[col] || 'N/A');
+            const entry = {};
+            entry.campaignName = row[colNames.campaign] || 'N/A';
+            entry.date = has.date ? parseDate(row[colNames.date]) : null;
+            entry.spend = has.spend ? parseValue(row[colNames.spend]) : 0;
+            entry.leads = has.leads ? parseInteger(row[colNames.leads]) : 0;
+            entry.clicks = has.clicks ? parseInteger(row[colNames.clicks]) : 0;
+            entry.impressions = has.impressions ? parseInteger(row[colNames.impressions]) : 0;
+            const primaryCols = new Set(Object.values(colNames).filter(Boolean));
+            validHeaders.forEach(h => { // Use validHeaders here
+                if (!primaryCols.has(h)) {
+                    const type = detectColumnType(h, row[h]);
+                    if (type === 'number' || type === 'currency' || type === 'percent') entry[h] = parseValue(row[h]);
+                    else if (type === 'string' && h !== colNames.campaign) entry[h] = row[h] || 'N/A';
+                }
+            });
+            const { spend = 0, leads = 0, clicks = 0, impressions = 0 } = entry;
+            // Calcula métricas a nível de linha (informativo, mas não usado para agregação)
+            entry.cpl = leads > 0 ? spend / leads : 0;
+            entry.cpc = clicks > 0 ? spend / clicks : 0;
+            entry.cpm = impressions > 0 ? (spend / impressions) * 1000 : 0;
+            entry.ctr = impressions > 0 ? clicks / impressions : 0;
             return entry;
         });
-        
-        if (has.date) {
+
+        generateBaseColumnDefinitions(validHeaders, data[0]); // Use validHeaders here
+        // populateDynamicUI(); // Moved later
+        addListeners(); // Add listeners before potentially loading saved view
+        loadPresets();
+
+        const lastViewJson = localStorage.getItem(LAST_VIEW_LS_KEY);
+        let viewToApply;
+        if (lastViewJson) { try { viewToApply = JSON.parse(lastViewJson); } catch (e) { console.error("Error loading last view", e); } }
+
+        // ******** CORRECTED INITIAL LOAD LOGIC ********
+        if (viewToApply) {
+            // Apply saved view, which internally calls reconcile, reprocess, save, updateGraphSelectors, populateDynamicUI
+            applyView(viewToApply, true); // Use isInitialLoad = true
+            // Now apply filters based on the loaded view and initial date range
+            applyFilters();
+        } else {
+            // Use base definitions as the active view
+            activeColumnDefinitions = [...baseColumnDefinitions];
+            // Need to save this default view as the "last active"
+            localStorage.setItem(LAST_VIEW_LS_KEY, JSON.stringify(activeColumnDefinitions));
+            reprocessDataWithView(activeColumnDefinitions); // Process calculated columns for default view
+            updateGraphSelectors(); // Needed for default view
+            populateDynamicUI(); // Populate filters based on default
+            applyFilters(); // Apply filters and render dashboard
+        }
+        // ***********************************************
+    }
+
+
+    function generateBaseColumnDefinitions(headers, sampleRow) {
+        baseColumnDefinitions = [];
+        let order = 1;
+        // Add key metrics first
+        if (has.spend) baseColumnDefinitions.push({ key: 'spend', label: 'Custo', type: 'currency', visible: true, pinned: true, isFilterable: false, source: 'csv', order: order++ });
+        if (has.leads) baseColumnDefinitions.push({ key: 'leads', label: 'Leads', type: 'number', visible: true, pinned: true, isFilterable: false, source: 'csv', order: order++ });
+        // Add default calculated metrics
+        if (has.spend && has.leads) baseColumnDefinitions.push({ key: 'cpl', label: 'CPL', type: 'currency', visible: true, pinned: true, isFilterable: false, source: 'calculated', formula: '[Custo] / [Leads]', order: order++ });
+        if (has.clicks) baseColumnDefinitions.push({ key: 'clicks', label: 'Cliques', type: 'number', visible: true, pinned: false, isFilterable: false, source: 'csv', order: order++ });
+        if (has.impressions) baseColumnDefinitions.push({ key: 'impressions', label: 'Impressões', type: 'number', visible: true, pinned: false, isFilterable: false, source: 'csv', order: order++ });
+        if (has.spend && has.clicks) baseColumnDefinitions.push({ key: 'cpc', label: 'CPC', type: 'currency', visible: false, pinned: false, isFilterable: false, source: 'calculated', formula: '[Custo] / [Cliques]', order: order++ });
+        if (has.spend && has.impressions) baseColumnDefinitions.push({ key: 'cpm', label: 'CPM', type: 'currency', visible: false, pinned: false, isFilterable: false, source: 'calculated', formula: '[Custo] / [Impressões] * 1000', order: order++ });
+        if (has.clicks && has.impressions) baseColumnDefinitions.push({ key: 'ctr', label: 'CTR', type: 'percent', visible: false, pinned: false, isFilterable: false, source: 'calculated', formula: '[Cliques] / [Impressões]', order: order++ });
+        // Add campaign and date
+        if (has.campaign) baseColumnDefinitions.push({ key: 'campaignName', label: 'Campanha', type: 'string', visible: true, isFilterable: true, source: 'csv', order: order++ });
+        if (has.date) baseColumnDefinitions.push({ key: 'date', label: 'Data', type: 'date', visible: true, isFilterable: false, source: 'csv', order: order++ });
+
+        // Add ALL other columns from CSV
+        const knownKeys = new Set(baseColumnDefinitions.map(c => c.key));
+        headers.forEach(h => {
+            const key = h; // In originalData, the key is the header itself
+            if (!key || knownKeys.has(key)) return; // Skip empty or already added keys
+
+            // Check if the column actually exists in the processed data
+            if (originalData[0] && originalData[0].hasOwnProperty(key)) {
+                const type = detectColumnType(h, sampleRow[h]);
+                const uniqueValuesCount = new Set(originalData.map(item => item[key])).size;
+
+                if (type === 'string') {
+                    const filterable = uniqueValuesCount > 1 && uniqueValuesCount < 50;
+                    // *** Make filterable strings visible by default ***
+                    baseColumnDefinitions.push({
+                        key: key, label: h, type: 'string',
+                        visible: filterable, // Visible IF filterable
+                        isFilterable: filterable,
+                        source: 'csv', order: order++
+                    });
+                } else if (type === 'number' || type === 'currency' || type === 'percent') {
+                    baseColumnDefinitions.push({
+                        key: key, label: h, type: type,
+                        visible: false, pinned: false, isFilterable: false,
+                        source: 'csv', order: order++
+                    });
+                }
+                // Ignore other types (e.g., poorly formatted dates)
+            }
+        });
+    }
+
+
+    function populateDynamicUI() {
+        elements.dynamicFiltersContainer.innerHTML = ''; // Clear before recreating
+        const filterableCols = activeColumnDefinitions.filter(c => c.visible && c.isFilterable && c.type === 'string')
+            .sort((a,b) => (a.order || 999) - (b.order || 999));
+
+        if(filterableCols.length === 0) {
+             elements.dynamicFiltersContainer.innerHTML = '<p class="text-slate-400 md:col-span-4">Nenhum filtro ativo. Personalize a visão para adicionar filtros.</p>';
+        } else {
+            filterableCols.forEach(col => {
+                const colName = col.key;
+                const container = document.createElement('div');
+                container.className = 'flex flex-col gap-1 relative'; // Added relative for dropdown positioning
+                const label = document.createElement('label');
+                label.textContent = col.label; // Use the defined label
+                label.className = 'text-sm font-medium text-slate-300'; // Style label
+                container.appendChild(label);
+
+                // Campaign filter is special (multiselect)
+                if (colName === 'campaignName' && has.campaign) {
+                    // Check if multiselect elements already exist (to preserve state during redraw)
+                    let button = document.getElementById('campaign-multiselect-btn');
+                    let dropdown = document.getElementById('campaign-multiselect-dropdown');
+                    let selectedCount = 0;
+
+                    if (!button) {
+                        button = document.createElement('button');
+                        button.id = 'campaign-multiselect-btn';
+                        button.className = 'filter-select text-left';
+                        dropdown = document.createElement('div');
+                        dropdown.id = 'campaign-multiselect-dropdown';
+                        dropdown.className = 'hidden absolute top-full left-0 w-full bg-slate-600 border border-slate-700 rounded-md mt-1 z-10 p-2 multiselect-container';
+
+                        const uniqueCampaigns = [...new Set(originalData.map(item => item.campaignName))].sort();
+                        uniqueCampaigns.forEach(campaign => {
+                            const item = document.createElement('label'); item.className = 'flex items-center';
+                            // State is not preserved here initially, will be updated below
+                            item.innerHTML = `<input type="checkbox" class="campaign-checkbox custom-checkbox" value="${campaign}"><span class="ml-2">${campaign}</span>`;
+                            dropdown.appendChild(item);
+                        });
+                         container.appendChild(button);
+                         container.appendChild(dropdown);
+
+                         // Add listeners only once
+                         button.addEventListener('click', () => dropdown.classList.toggle('hidden'));
+                         document.addEventListener('click', (e) => { if (!container.contains(e.target)) dropdown.classList.add('hidden'); });
+                         dropdown.addEventListener('change', () => {
+                             const count = dropdown.querySelectorAll('.campaign-checkbox:checked').length;
+                             button.textContent = count > 0 ? `${count} selecionada(s)` : 'Selecionar...';
+                             applyFilters(); // Apply on change
+                         });
+                    } else {
+                         // If elements exist, just append them and update count
+                         container.appendChild(button);
+                         container.appendChild(dropdown);
+                         selectedCount = dropdown.querySelectorAll('.campaign-checkbox:checked').length;
+                    }
+                     button.textContent = selectedCount > 0 ? `${selectedCount} selecionada(s)` : 'Selecionar...';
+
+                } else {
+                    // Other filters (simple dropdown)
+                    const select = document.createElement('select');
+                    select.className = 'filter-select dynamic-filter';
+                    select.dataset.column = colName;
+                    // Preserve previous value if element exists
+                    const existingSelect = document.querySelector(`.dynamic-filter[data-column="${colName}"]`);
+                    const currentValue = existingSelect ? existingSelect.value : "";
+
+                    select.innerHTML = `<option value="">Todos</option>`;
+                    // Re-read unique values from originalData each time
+                    const uniqueValues = [...new Set(originalData.map(item => item[colName]))].filter(v => v !== null && typeof v !== 'undefined').sort(); // Filter out null/undefined
+                    uniqueValues.forEach(v => v && select.add(new Option(v, v)));
+                    select.value = currentValue; // Restore previous value
+
+                    container.appendChild(select);
+                    // Add listener if it doesn't exist yet (important for redraws)
+                    if (!existingSelect) {
+                        select.addEventListener('change', applyFilters);
+                    }
+                }
+                 elements.dynamicFiltersContainer.appendChild(container); // Append the container for the filter
+            });
+        }
+
+        updateGraphSelectors();
+        document.getElementById('date-filter-section').style.display = has.date ? 'block' : 'none';
+        document.getElementById('timeline-card').style.display = has.date ? 'flex' : 'none';
+        if (has.date && !elements.filterStartDateA.value) { // Set initial date range only if not already set
             const dateFilteredData = originalData.filter(row => row.date instanceof Date && !isNaN(row.date.getTime()));
             if (dateFilteredData.length > 0) {
                 const dates = dateFilteredData.map(d => d.date);
                 const minDate = new Date(Math.min(...dates)), maxDate = new Date(Math.max(...dates));
-                document.getElementById('filter-start-date').value = minDate.toISOString().split('T')[0];
-                document.getElementById('filter-end-date').value = maxDate.toISOString().split('T')[0];
+                elements.filterStartDateA.value = minDate.toISOString().split('T')[0];
+                elements.filterEndDateA.value = maxDate.toISOString().split('T')[0];
             }
         }
-        populateDynamicUI(headers); addListeners(); applyFilters();
     }
-    
-    function populateDynamicUI(headers) {
-        elements.dynamicFiltersContainer.innerHTML = '';
-        const campaignCol = findColumn(headers, ['Campaign Name']);
-        if(campaignCol) {
-            const container = document.createElement('div'); container.className = 'flex flex-col gap-1 relative';
-            const label = document.createElement('label'); label.textContent = 'Campanhas';
-            const button = document.createElement('button'); button.id = 'campaign-multiselect-btn'; button.className = 'filter-select text-left'; button.textContent = 'Selecionar...';
-            const dropdown = document.createElement('div'); dropdown.id = 'campaign-multiselect-dropdown'; dropdown.className = 'hidden absolute top-full left-0 w-full bg-slate-600 border border-slate-700 rounded-md mt-1 z-10 p-2 multiselect-container';
-            const uniqueCampaigns = [...new Set(originalData.map(item => item.campaignName))].sort();
-            uniqueCampaigns.forEach(campaign => { const item = document.createElement('label'); item.className = 'flex items-center'; item.innerHTML = `<input type="checkbox" class="campaign-checkbox custom-checkbox" value="${campaign}"><span class="ml-2">${campaign}</span>`; dropdown.appendChild(item); });
-            container.appendChild(label); container.appendChild(button); container.appendChild(dropdown);
-            elements.dynamicFiltersContainer.appendChild(container);
-        }
 
-        categoricalColumns.forEach(colName => {
-            const container = document.createElement('div'); container.className = 'flex flex-col gap-1';
-            const label = document.createElement('label'); label.textContent = colName;
-            const select = document.createElement('select'); select.className = 'filter-select dynamic-filter'; select.dataset.column = colName;
-            select.innerHTML = `<option value="">Todos</option>`;
-            const uniqueValues = [...new Set(originalData.map(item => item[colName]))].sort();
-            uniqueValues.forEach(v => v && select.add(new Option(v, v)));
-            container.appendChild(label); container.appendChild(select);
-            elements.dynamicFiltersContainer.appendChild(container);
-        });
-
-        document.querySelectorAll('.category-selector').forEach((sel, i) => { sel.innerHTML = ''; categoricalColumns.forEach((col, j) => sel.add(new Option(col, col))); if (categoricalColumns[i]) sel.value = categoricalColumns[i]; });
-
-        document.getElementById('card-leads').style.display = has.leads ? 'flex' : 'none';
-        document.getElementById('card-cpl').style.display = has.leads && has.spend ? 'flex' : 'none';
-        document.getElementById('card-cpc').style.display = has.cpc || (has.spend && has.clicks) ? 'flex' : 'none';
-        document.getElementById('card-cpm').style.display = has.cpm || (has.spend && has.impressions) ? 'flex' : 'none';
-        document.getElementById('date-filter-container').style.display = has.date ? 'flex' : 'none';
-        document.getElementById('timeline-card').style.display = has.date ? 'flex' : 'none';
-    }
 
     function addListeners() {
-        document.getElementById('dynamic-filters-container').addEventListener('change', applyFilters);
-        document.getElementById('filter-start-date').addEventListener('change', applyFilters);
-        document.getElementById('filter-end-date').addEventListener('change', applyFilters);
-        elements.clearFiltersBtn.addEventListener('click', () => { 
-            document.querySelectorAll('.dynamic-filter, #filter-start-date, #filter-end-date').forEach(el => { if(el.tagName === 'SELECT') el.selectedIndex = 0; else el.value = ''; }); 
-            const campaignCheckboxes = document.querySelectorAll('.campaign-checkbox');
-            if (campaignCheckboxes.length > 0) {
-                campaignCheckboxes.forEach(cb => cb.checked = false);
-                document.getElementById('campaign-multiselect-btn').textContent = 'Selecionar...';
-            }
-            applyFilters(); 
+        // dynamicFiltersContainer listener is added dynamically in populateDynamicUI
+        elements.filterStartDateA.addEventListener('change', applyFilters);
+        elements.filterEndDateA.addEventListener('change', applyFilters);
+        elements.filterStartDateB.addEventListener('change', applyFilters);
+        elements.filterEndDateB.addEventListener('change', applyFilters);
+        elements.compareToggle.addEventListener('change', (e) => {
+            isComparisonActive = e.target.checked;
+            elements.comparisonDateContainer.classList.toggle('hidden', !isComparisonActive);
+            elements.toggleComparisonDetailsBtn.classList.toggle('hidden', !isComparisonActive);
+            showComparisonDetails = true; updateToggleDetailsButton(); applyFilters();
         });
-        document.querySelectorAll('.category-selector, .chart-type-selector').forEach(sel => sel.addEventListener('change', applyFilters));
-        elements.downloadPdfBtn.addEventListener('click', downloadPDF);
-        elements.downloadImageBtn.addEventListener('click', downloadImage);
+        elements.toggleComparisonDetailsBtn.addEventListener('click', () => {
+            showComparisonDetails = !showComparisonDetails; updateToggleDetailsButton();
+            // Only re-render, don't re-filter
+            updateCards(); updateTables(); updateAllCharts();
+        });
+        elements.clearFiltersBtn.addEventListener('click', () => {
+            document.querySelectorAll('.dynamic-filter').forEach(el => el.selectedIndex = 0);
+            const campaignDropdown = document.getElementById('campaign-multiselect-dropdown');
+            if (campaignDropdown) { campaignDropdown.querySelectorAll('.campaign-checkbox').forEach(cb => cb.checked = false); document.getElementById('campaign-multiselect-btn').textContent = 'Selecionar...'; }
+            elements.filterStartDateA.value = ''; elements.filterEndDateA.value = ''; elements.filterStartDateB.value = ''; elements.filterEndDateB.value = '';
+            elements.compareToggle.checked = false; isComparisonActive = false; elements.comparisonDateContainer.classList.add('hidden'); elements.toggleComparisonDetailsBtn.classList.add('hidden'); showComparisonDetails = true; updateToggleDetailsButton();
+            if (has.date) {
+                const dateFilteredData = originalData.filter(row => row.date instanceof Date && !isNaN(row.date.getTime()));
+                if (dateFilteredData.length > 0) {
+                    const dates = dateFilteredData.map(d => d.date); const minDate = new Date(Math.min(...dates)), maxDate = new Date(Math.max(...dates));
+                    elements.filterStartDateA.value = minDate.toISOString().split('T')[0]; elements.filterEndDateA.value = maxDate.toISOString().split('T')[0];
+                } else { // Handle case with no valid dates
+                     elements.filterStartDateA.value = '';
+                     elements.filterEndDateA.value = '';
+                }
+            }
+            applyFilters();
+        });
+        document.querySelectorAll('.category-selector, .metric-selector, .chart-type-selector').forEach(sel => sel.addEventListener('change', applyFilters));
+        elements.downloadPdfBtn.addEventListener('click', downloadPDF); elements.downloadImageBtn.addEventListener('click', downloadImage); elements.downloadCsvBtn.addEventListener('click', downloadAnalysisCSV);
         elements.aiBtn.addEventListener('click', generateInsights);
         elements.campaignSearch.addEventListener('input', (e) => { tableState.searchTerm = e.target.value; tableState.currentPage = 1; updateTables(); });
-        
-        const campaignBtn = document.getElementById('campaign-multiselect-btn');
-        const campaignDropdown = document.getElementById('campaign-multiselect-dropdown');
-        if (campaignBtn) {
-            campaignBtn.addEventListener('click', () => campaignDropdown.classList.toggle('hidden'));
-            document.addEventListener('click', (e) => { if (!campaignBtn.contains(e.target) && !campaignDropdown.contains(e.target) && !e.target.closest('#campaign-multiselect-dropdown')) campaignDropdown.classList.add('hidden'); });
-            campaignDropdown.addEventListener('change', () => {
-                const selectedCount = document.querySelectorAll('.campaign-checkbox:checked').length;
-                campaignBtn.textContent = selectedCount > 0 ? `${selectedCount} selecionada(s)` : 'Selecionar...';
-            });
-        }
-        [1, 2, 3].forEach(i => {
-            document.getElementById(`chart${i}-labels-toggle`).addEventListener('click', () => {
-                chartLabelsState[`chart${i}`] = !chartLabelsState[`chart${i}`];
-                applyFilters();
-            });
+        document.getElementById('campaign-ranking-head').addEventListener('click', (e) => {
+            const header = e.target.closest('.sortable-header'); if (!header) return; const sortKey = header.dataset.sort;
+            if (tableState.sortColumn === sortKey) tableState.sortDirection = tableState.sortDirection === 'asc' ? 'desc' : 'asc';
+            else { tableState.sortColumn = sortKey; tableState.sortDirection = (sortKey.endsWith('_Pct') || sortKey === 'campaignName') ? 'asc' : 'desc'; }
+            updateTables(); // Only re-renders table
         });
+        [1, 2, 3].forEach(i => { document.getElementById(`chart${i}-labels-toggle`).addEventListener('click', () => { chartLabelsState[`chart${i}`] = !chartLabelsState[`chart${i}`]; updateAllCharts(); }); }); // Only re-renders charts
+        elements.openViewModalBtn.addEventListener('click', openViewModal); elements.viewModalCloseBtn.addEventListener('click', closeViewModal); elements.viewModalCancelBtn.addEventListener('click', closeViewModal);
+        elements.viewModal.addEventListener('click', (e) => { if (e.target === elements.viewModal) closeViewModal(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !elements.viewModal.classList.contains('hidden')) closeViewModal(); });
+        elements.modalTabs.forEach(tab => { tab.addEventListener('click', () => { elements.modalTabs.forEach(t => t.classList.remove('active')); elements.modalTabContents.forEach(c => c.classList.remove('active')); tab.classList.add('active'); document.getElementById(tab.dataset.tab).classList.add('active'); }); });
+        elements.viewModalApplyBtn.addEventListener('click', applyModalView); elements.viewModalResetBtn.addEventListener('click', resetViewToDefault);
+        elements.modalColumnSearch.addEventListener('input', renderModalColumnList); elements.calcColAddBtn.addEventListener('click', addCalculatedColumn); elements.presetSaveBtn.addEventListener('click', savePreset);
     }
+
+    // --- Lógica de Filtro e Atualização ---
 
     function applyFilters() {
+        // Prevent applying filters if originalData is not ready
+        if (!originalData || originalData.length === 0) return;
+
         const dynamicFilters = Array.from(document.querySelectorAll('.dynamic-filter')).map(sel => ({ key: sel.dataset.column, value: sel.value }));
         const selectedCampaigns = Array.from(document.querySelectorAll('.campaign-checkbox:checked')).map(cb => cb.value);
-        const f = { start: document.getElementById('filter-start-date').valueAsDate, end: document.getElementById('filter-end-date').valueAsDate };
-        if (f.start) f.start.setUTCHours(0, 0, 0, 0);
-        if (f.end) f.end.setUTCHours(23, 59, 59, 999);
+        const f_A = { start: elements.filterStartDateA.valueAsDate, end: elements.filterEndDateA.valueAsDate };
+        if (f_A.start) f_A.start.setUTCHours(0, 0, 0, 0); if (f_A.end) f_A.end.setUTCHours(23, 59, 59, 999);
         filteredData = originalData.filter(row => {
-            const dateMatch = !has.date || ((!f.start || row.date >= f.start) && (!f.end || row.date <= f.end));
+            const dateMatch = !has.date || (!row.date || ((!f_A.start || row.date >= f_A.start) && (!f_A.end || row.date <= f_A.end))); // Added check for row.date
             const categoryMatch = dynamicFilters.every(filter => !filter.value || row[filter.key] === filter.value);
-            const campaignMatch = selectedCampaigns.length === 0 || selectedCampaigns.includes(row.campaignName);
+            const campaignDef = activeColumnDefinitions.find(c => c.key === 'campaignName');
+            const campaignMatch = !has.campaign || !campaignDef?.isFilterable || selectedCampaigns.length === 0 || selectedCampaigns.includes(row.campaignName);
             return dateMatch && categoryMatch && campaignMatch;
         });
+        if (isComparisonActive) {
+            const f_B = { start: elements.filterStartDateB.valueAsDate, end: elements.filterEndDateB.valueAsDate };
+            if (f_B.start) f_B.start.setUTCHours(0, 0, 0, 0); if (f_B.end) f_B.end.setUTCHours(23, 59, 59, 999);
+            if (f_B.start && f_B.end) {
+                comparisonData = originalData.filter(row => {
+                    const dateMatch = !has.date || (!row.date || ((!f_B.start || row.date >= f_B.start) && (!f_B.end || row.date <= f_B.end))); // Added check for row.date
+                    const categoryMatch = dynamicFilters.every(filter => !filter.value || row[filter.key] === filter.value);
+                    const campaignDef = activeColumnDefinitions.find(c => c.key === 'campaignName');
+                    const campaignMatch = !has.campaign || !campaignDef?.isFilterable || selectedCampaigns.length === 0 || selectedCampaigns.includes(row.campaignName);
+                    return dateMatch && categoryMatch && campaignMatch;
+                });
+            } else comparisonData = [];
+        } else comparisonData = [];
         updateDashboard();
     }
-    
-    function updateDashboard() { updateCards(); updateAllCharts(); updateTables(); }
+
+
+    function updateDashboard() {
+        // Only populate filters if needed (view changed or initial load)
+        // Avoid repopulating on every filter change to prevent losing selection state
+        // We'll rely on applyView to call populateDynamicUI when the definitions change.
+        // populateDynamicUI(); // Removed from here
+        updateCards();
+        updateAllCharts();
+        updateTables();
+    }
+
+    function updateToggleDetailsButton() {
+       const btn = elements.toggleComparisonDetailsBtn;
+       if (showComparisonDetails) { btn.innerHTML = '<i class="fas fa-eye-slash mr-1"></i> Ocultar B'; btn.title = "Ocultar detalhes do Período B"; }
+       else { btn.innerHTML = '<i class="fas fa-eye mr-1"></i> Mostrar B'; btn.title = "Mostrar detalhes do Período B"; }
+    }
 
     function updateCards() {
-        const totalSpend = filteredData.reduce((s, r) => s + r.spend, 0), totalLeads = filteredData.reduce((s, r) => s + r.leads, 0),
-        totalImpressions = filteredData.reduce((s, r) => s + r.impressions, 0), totalClicks = filteredData.reduce((s, r) => s + r.clicks, 0);
-        const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0, cpl = totalLeads > 0 ? totalSpend / totalLeads : 0;
-        document.getElementById('total-investido').textContent = formatCurrency(totalSpend); document.getElementById('total-leads').textContent = formatNumber(totalLeads);
-        document.getElementById('total-impressoes').textContent = formatNumber(totalImpressions); document.getElementById('total-cliques').textContent = formatNumber(totalClicks);
-        document.getElementById('ctr').textContent = `${ctr.toFixed(2)}%`; document.getElementById('cpl').textContent = formatCurrency(cpl);
-
-        if(has.cpc) { document.getElementById('cpc').textContent = formatCurrency(filteredData.reduce((s, r) => s + r.cpc, 0) / filteredData.length || 0); } 
-        else if (has.spend && has.clicks) { document.getElementById('cpc').textContent = formatCurrency(totalClicks > 0 ? totalSpend / totalClicks : 0); }
+        elements.kpiCardContainer.innerHTML = '';
+        const metrics = activeColumnDefinitions.filter(c => c.visible && ['number', 'currency', 'percent'].includes(c.type));
+        metrics.sort((a, b) => { if (a.pinned && !b.pinned) return -1; if (!a.pinned && b.pinned) return 1; return (a.order || 999) - (b.order || 999); });
+        if (metrics.length === 0) { elements.kpiCardContainer.innerHTML = '<p class="text-slate-400 col-span-full">Nenhuma métrica visível. Ajuste em "Personalizar Visão".</p>'; return; }
         
-        if(has.cpm) { document.getElementById('cpm').textContent = formatCurrency(filteredData.reduce((s, r) => s + r.cpm, 0) / filteredData.length || 0); }
-        else if (has.spend && has.impressions) { document.getElementById('cpm').textContent = formatCurrency(totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0); }
+        if (!isComparisonActive || comparisonData.length === 0) {
+            elements.kpiCardContainer.className = 'grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6 mb-8';
+            metrics.forEach(col => {
+                // [CORRIGIDO] Usa a nova função de agregação
+                const value = aggregateMetric(filteredData, col);
+                const formattedValue = formatValue(value, col.type);
+                elements.kpiCardContainer.innerHTML += `<div class="card"><p class="card-title">${col.label}</p><p class="card-value">${formattedValue}</p></div>`;
+            });
+        } else {
+            elements.kpiCardContainer.className = `grid grid-cols-1 md:grid-cols-2 ${showComparisonDetails ? 'lg:grid-cols-3' : ''} gap-6 mb-8`;
+            metrics.forEach(col => {
+                // [CORRIGIDO] Usa a nova função de agregação
+                const valA = aggregateMetric(filteredData, col);
+                const valB = aggregateMetric(comparisonData, col);
+                
+                const deltaAbs = valB - valA; const deltaPct = safePercentChange(valA, valB);
+                const deltaType = col.type === 'percent' ? 'number' : col.type; const deltaAbsFormatted = formatValue(deltaAbs, deltaType); const deltaPctFormattedHTML = formatDeltaPercent(deltaPct);
+                
+                elements.kpiCardContainer.innerHTML += `<div class="card"><p class="card-title">${col.label} (A)</p><p class="card-value">${formatValue(valA, col.type)}</p></div>`;
+                if (showComparisonDetails) elements.kpiCardContainer.innerHTML += `<div class="card"><p class="card-title">${col.label} (B)</p><p class="card-value">${formatValue(valB, col.type)}</p></div>`;
+                 // Adjusted padding/size for delta card value
+                elements.kpiCardContainer.innerHTML += `<div class="card"><p class="card-title">Variação (${col.label})</p><p class="card-value text-lg md:text-xl flex items-center gap-2">${deltaAbsFormatted} ${deltaPctFormattedHTML}</p></div>`;
+            });
+        }
     }
+
 
     function updateTables() {
+        const visibleMetrics = activeColumnDefinitions.filter(c => c.visible && ['number', 'currency', 'percent'].includes(c.type)).sort((a, b) => (a.order || 999) - (b.order || 999));
+        const groupingColumn = activeColumnDefinitions.find(c => c.key === 'campaignName');
+        if (!groupingColumn || !groupingColumn.visible) {
+             document.getElementById('campaign-ranking-head').innerHTML = ''; document.getElementById('campaign-ranking-body').innerHTML = '<tr><td class="p-4 text-slate-400">Tabela de Ranking oculta. Ative a coluna "Campanha" na Personalização de Visão.</td></tr>'; document.getElementById('pagination-controls').innerHTML = ''; return;
+        }
         const head = document.getElementById('campaign-ranking-head');
-        head.innerHTML = `<tr class="border-b border-slate-700"><th class="p-2 sortable-header" data-sort="name">Campanha <i class="fas fa-sort"></i></th><th class="p-2 sortable-header" data-sort="spend">Gasto <i class="fas fa-sort"></i></th>` + (has.leads ? `<th class="p-2 sortable-header" data-sort="leads">Leads <i class="fas fa-sort"></i></th><th class="p-2 sortable-header" data-sort="cpl">CPL <i class="fas fa-sort"></i></th>` : '') + `</tr>`;
-        const campaignData = filteredData.reduce((acc, row) => { acc[row.campaignName] = acc[row.campaignName] || { spend: 0, leads: 0 }; acc[row.campaignName].spend += row.spend; if(has.leads) acc[row.campaignName].leads += row.leads; return acc; }, {});
-        let processedData = Object.entries(campaignData).map(([name, d]) => ({ name, ...d, cpl: d.leads > 0 ? d.spend / d.leads : 0 }));
-        if (tableState.searchTerm) { processedData = processedData.filter(c => c.name.toLowerCase().includes(tableState.searchTerm.toLowerCase())); }
-        processedData.sort((a, b) => { const valA = a[tableState.sortColumn], valB = b[tableState.sortColumn]; const compare = typeof valA === 'string' ? valA.localeCompare(valB) : valA - valB; return tableState.sortDirection === 'asc' ? compare : -compare; });
+        let headerHTML = `<tr class="border-b border-slate-700"><th class="p-2 sortable-header sticky left-0 bg-slate-800 z-10" data-sort="campaignName">${groupingColumn.label} <i class="fas fa-sort"></i></th>`; // Sticky header
+        if (!isComparisonActive || comparisonData.length === 0) {
+            visibleMetrics.forEach(col => headerHTML += `<th class="p-2 sortable-header" data-sort="${col.key}">${col.label} <i class="fas fa-sort"></i></th>`);
+            headerHTML += `</tr>`; head.innerHTML = headerHTML;
+            const campaignData = aggregateCampaignData(filteredData, visibleMetrics); processedData = Object.values(campaignData);
+        } else {
+            visibleMetrics.forEach(col => {
+                headerHTML += `<th class="p-2 sortable-header" data-sort="${col.key}_A">${col.label} (A) <i class="fas fa-sort"></i></th>`;
+                if(showComparisonDetails) headerHTML += `<th class="p-2 sortable-header" data-sort="${col.key}_B">${col.label} (B) <i class="fas fa-sort"></i></th>`;
+                headerHTML += `<th class="p-2 sortable-header" data-sort="${col.key}_D_Abs">Δ Abs <i class="fas fa-sort"></i></th>`;
+                headerHTML += `<th class="p-2 sortable-header" data-sort="${col.key}_D_Pct">Δ % <i class="fas fa-sort"></i></th>`;
+            });
+            headerHTML += `</tr>`; head.innerHTML = headerHTML;
+            const campaignDataA = aggregateCampaignData(filteredData, visibleMetrics); const campaignDataB = aggregateCampaignData(comparisonData, visibleMetrics);
+            const allCampaignNames = [...new Set([...Object.keys(campaignDataA), ...Object.keys(campaignDataB)])];
+            processedData = allCampaignNames.map(name => {
+                const dataA = campaignDataA[name] || { campaignName: name }; const dataB = campaignDataB[name] || { campaignName: name }; const entry = { campaignName: name };
+                visibleMetrics.forEach(col => {
+                    const valA = dataA[col.key] || 0; const valB = dataB[col.key] || 0; const deltaAbs = valB - valA; const deltaPct = safePercentChange(valA, valB);
+                    entry[`${col.key}_A`] = valA; entry[`${col.key}_B`] = valB; entry[`${col.key}_D_Abs`] = deltaAbs; entry[`${col.key}_D_Pct`] = deltaPct;
+                }); return entry;
+            });
+        }
+        tableProcessedData = processedData;
+        if (tableState.searchTerm) processedData = processedData.filter(c => c.campaignName.toLowerCase().includes(tableState.searchTerm.toLowerCase()));
+        processedData.sort((a, b) => {
+            let key = tableState.sortColumn;
+            if (isComparisonActive && key !== 'campaignName' && !key.endsWith('_A') && !key.endsWith('_B') && !key.endsWith('_D_Abs') && !key.endsWith('_D_Pct')) key = `${key}_A`;
+            const valA = a[key]; const valB = b[key]; const compare = typeof valA === 'string' ? valA.localeCompare(valB) : (valA || 0) - (valB || 0);
+            return tableState.sortDirection === 'asc' ? compare : -compare;
+        });
         const body = document.getElementById('campaign-ranking-body'); body.innerHTML = '';
-        const startIndex = (tableState.currentPage - 1) * tableState.rowsPerPage;
-        const paginatedData = processedData.slice(startIndex, startIndex + tableState.rowsPerPage);
-        paginatedData.forEach(c => { const row = body.insertRow(); row.className = 'border-b border-slate-800 hover:bg-slate-700/50'; row.innerHTML = `<td class="p-2 font-medium">${c.name}</td><td class="p-2">${formatCurrency(c.spend)}</td>` + (has.leads ? `<td class="p-2">${formatNumber(c.leads)}</td><td class="p-2">${formatCurrency(c.cpl)}</td>` : ''); });
-        renderPagination(processedData.length);
-    }
-    
-    function renderPagination(totalRows) {
-        const pageCount = Math.ceil(totalRows / tableState.rowsPerPage);
-        elements.paginationControls.innerHTML = '';
-        for (let i = 1; i <= pageCount; i++) { const btn = document.createElement('button'); btn.textContent = i; btn.className = 'pagination-btn'; if (i === tableState.currentPage) btn.classList.add('active'); btn.addEventListener('click', () => { tableState.currentPage = i; updateTables(); }); elements.paginationControls.appendChild(btn); }
+        const startIndex = (tableState.currentPage - 1) * tableState.rowsPerPage; const paginatedData = processedData.slice(startIndex, startIndex + tableState.rowsPerPage);
+        paginatedData.forEach(c => {
+            const row = body.insertRow(); row.className = 'border-b border-slate-800 hover:bg-slate-700/50';
+            let rowHTML = `<td class="p-2 font-medium sticky left-0 bg-slate-700/50 z-10">${c.campaignName}</td>`; // Sticky cell
+            if (!isComparisonActive || comparisonData.length === 0) {
+                visibleMetrics.forEach(col => rowHTML += `<td class="p-2">${formatValue(c[col.key], col.type)}</td>`);
+            } else {
+                visibleMetrics.forEach(col => {
+                    const deltaType = col.type === 'percent' ? 'number' : col.type; const valA = c[`${col.key}_A`]; const valB = c[`${col.key}_B`]; const valDAbs = c[`${col.key}_D_Abs`]; const valDPct = c[`${col.key}_D_Pct`];
+                    const deltaPctFormattedHTML = formatDeltaPercent(valDPct).replace('text-base', 'text-sm'); // Smaller delta in table
+                    rowHTML += `<td class="p-2">${formatValue(valA, col.type)}</td>`;
+                    if(showComparisonDetails) rowHTML += `<td class="p-2">${formatValue(valB, col.type)}</td>`;
+                    rowHTML += `<td class="p-2">${formatValue(valDAbs, deltaType)}</td>`; rowHTML += `<td class="p-2">${deltaPctFormattedHTML}</td>`;
+                });
+            } row.innerHTML = rowHTML;
+        }); renderPagination(processedData.length);
     }
 
-    function drawOrUpdateChart(id, type, data, options = {}) { if (charts[id]) charts[id].destroy(); charts[id] = new Chart(document.getElementById(id), { type, data, options }); }
+
+    /**
+     * [CORRIGIDO] Agrega dados por campanha, garantindo que as métricas de base
+     * (spend, leads, etc.) sejam sempre somadas para calcular as taxas corretamente.
+     */
+    function aggregateCampaignData(data, metrics) {
+        const campaignData = data.reduce((acc, row) => {
+            const name = row.campaignName || 'N/A';
+            if (!acc[name]) {
+                acc[name] = { campaignName: name, rowCount: 0, spend: 0, leads: 0, clicks: 0, impressions: 0 };
+                // Inicializa outras métricas visíveis
+                metrics.forEach(col => {
+                     if (!['spend', 'leads', 'clicks', 'impressions'].includes(col.key)) {
+                        acc[name][col.key] = 0;
+                     }
+                });
+            }
+            
+            acc[name].rowCount++;
+            acc[name].spend += (row.spend || 0);
+            acc[name].leads += (row.leads || 0);
+            acc[name].clicks += (row.clicks || 0);
+            acc[name].impressions += (row.impressions || 0);
+            
+            // Acumula outras métricas visíveis (que não sejam taxas)
+            metrics.forEach(col => {
+                const k = col.key;
+                if (!['spend', 'leads', 'clicks', 'impressions', 'cpl', 'cpc', 'cpm', 'ctr'].includes(k)) {
+                    if (typeof row[k] === 'number' && isFinite(row[k])) {
+                        acc[name][k] += row[k];
+                    }
+                }
+            });
+            return acc;
+        }, {});
+
+        // Calcula taxas e médias para cada campanha
+        Object.values(campaignData).forEach(c => {
+            metrics.forEach(col => {
+                const k = col.key;
+                if (k === 'cpl') {
+                    c[k] = c.leads > 0 ? c.spend / c.leads : 0;
+                } else if (k === 'cpc') {
+                    c[k] = c.clicks > 0 ? c.spend / c.clicks : 0;
+                } else if (k === 'cpm') {
+                    c[k] = c.impressions > 0 ? (c.spend / c.impressions) * 1000 : 0;
+                } else if (k === 'ctr') {
+                    c[k] = c.impressions > 0 ? c.clicks / c.impressions : 0;
+                } else if (getAggregationType(k) === 'avg' && !['spend', 'leads', 'clicks', 'impressions'].includes(k)) {
+                    // Calcula média para outras métricas 'avg' (ex: colunas custom)
+                    c[k] = c.rowCount > 0 ? c[k] / c.rowCount : 0;
+                }
+                // Métricas 'sum' (spend, leads, clicks, etc.) já estão corretas
+            });
+        });
+        return campaignData;
+    }
+
+
+    function renderPagination(totalRows) {
+        const pageCount = Math.ceil(totalRows / tableState.rowsPerPage); elements.paginationControls.innerHTML = ''; if (pageCount <= 1) return;
+        for (let i = 1; i <= pageCount; i++) {
+            const btn = document.createElement('button'); btn.textContent = i; btn.className = 'pagination-btn'; if (i === tableState.currentPage) btn.classList.add('active');
+            btn.addEventListener('click', () => { tableState.currentPage = i; updateTables(); }); elements.paginationControls.appendChild(btn);
+        }
+    }
 
     function updateAllCharts() {
+        const visibleMetrics = activeColumnDefinitions.filter(c => c.visible && ['number', 'currency', 'percent'].includes(c.type));
         if (has.date) {
-            const timeData = filteredData.reduce((acc, item) => { 
-                const key = item.date.toISOString().split('T')[0];
-                if (!acc[key]) acc[key] = { spend: 0, leads: 0 }; 
-                acc[key].spend += item.spend; 
-                if (has.leads) acc[key].leads += item.leads; 
-                return acc; 
-            }, {});
-            const sortedKeys = Object.keys(timeData).sort();
-            const timeDatasets = [{ label: 'Investimento', data: sortedKeys.map(k => timeData[k].spend), backgroundColor: chartColors[0], yAxisID: 'y' }];
-            if (has.leads) timeDatasets.push({ label: 'Leads', data: sortedKeys.map(k => timeData[k].leads), backgroundColor: chartColors[1], yAxisID: 'y1' });
-            drawOrUpdateChart('timeline-chart', document.getElementById('timeline-chart-type').value, { labels: sortedKeys, datasets: timeDatasets}, { scales: { x: { type: 'time', time: { unit: 'day', tooltipFormat: 'dd/MM/yy' } }, y: { position: 'left' }, y1: { position: 'right', grid: { drawOnChartArea: false }, display: has.leads } } });
+            const options = { scales: { x: { type: 'time', time: { unit: 'day', tooltipFormat: 'dd/MM/yy' } }, y: { position: 'left', title: { display: true, text: 'Valores (R$, #)'} }, y1: { position: 'right', grid: { drawOnChartArea: false }, display: visibleMetrics.some(c => c.type === 'percent'), title: { display: true, text: 'Valores (%)'} } }, plugins: { tooltip: { callbacks: { label: (context) => { const label = context.dataset.label.replace(/ \([AB]\)$/, ''); const col = activeColumnDefinitions.find(c => c.label === label); if (!col) return context.formattedValue; return `${context.dataset.label}: ${formatValue(context.raw, col.type)}`; } } } }, tension: 0.1, spanGaps: true };
+            
+            // [CORRIGIDO] aggregateTimeSeriesData agora calcula taxas corretamente
+            const timeDataA = aggregateTimeSeriesData(filteredData, visibleMetrics);
+            
+            if (!isComparisonActive || comparisonData.length === 0 || !showComparisonDetails) {
+                elements.timelineChartTitle.textContent = 'Evolução Temporal (Período A)'; const sortedKeys = Object.keys(timeDataA).sort();
+                const timeDatasets = visibleMetrics.map((col, i) => ({ label: col.label, data: sortedKeys.map(k => timeDataA[k]?.[col.key]), backgroundColor: chartColors[i % chartColors.length], borderColor: chartColors[i % chartColors.length], yAxisID: col.type === 'percent' ? 'y1' : 'y' }));
+                drawOrUpdateChart('timeline-chart', document.getElementById('timeline-chart-type').value, { labels: sortedKeys, datasets: timeDatasets }, options);
+            } else {
+                elements.timelineChartTitle.textContent = 'Evolução Temporal (A vs B)'; 
+                const timeDataB = aggregateTimeSeriesData(comparisonData, visibleMetrics);
+                const allKeys = [...new Set([...Object.keys(timeDataA), ...Object.keys(timeDataB)])].sort(); const timeDatasets = [];
+                visibleMetrics.forEach((col, i) => { const color = chartColors[i % chartColors.length];
+                    timeDatasets.push({ label: `${col.label} (A)`, data: allKeys.map(k => timeDataA[k]?.[col.key] ?? null), borderColor: color, backgroundColor: color + '50', borderDash: [5, 5], yAxisID: col.type === 'percent' ? 'y1' : 'y', pointRadius: 2, pointHoverRadius: 4 });
+                    timeDatasets.push({ label: `${col.label} (B)`, data: allKeys.map(k => timeDataB[k]?.[col.key] ?? null), borderColor: color, backgroundColor: color, yAxisID: col.type === 'percent' ? 'y1' : 'y', pointRadius: 2, pointHoverRadius: 4 });
+                }); document.getElementById('timeline-chart-type').value = 'line'; drawOrUpdateChart('timeline-chart', 'line', { labels: allKeys, datasets: timeDatasets }, options);
+            }
         }
-        
         [1, 2, 3].forEach(i => {
-            const category = document.getElementById(`chart${i}-category`).value;
-            const type = document.getElementById(`chart${i}-type`).value;
-            const toggleBtn = document.getElementById(`chart${i}-labels-toggle`);
-            
-            toggleBtn.style.display = (type === 'pie' || type === 'doughnut') ? 'block' : 'none';
-
-            if (!category) return;
-            const groupedData = filteredData.reduce((acc, item) => { const group = item[category] || 'N/A'; if (!acc[group]) acc[group] = { spend: 0, leads: 0 }; acc[group].spend += item.spend; if(has.leads) acc[group].leads += item.leads; return acc; }, {});
-            const labels = Object.keys(groupedData);
-            const chartDatasets = [{ label: 'Investimento', data: labels.map(l => groupedData[l].spend), backgroundColor: chartColors }];
-            if (has.leads) chartDatasets.push({ label: 'Leads', data: labels.map(l => groupedData[l].leads), backgroundColor: chartColors.map(c => c + '99') });
-            
+            const categoryKey = document.getElementById(`chart${i}-category`).value; const categoryDef = activeColumnDefinitions.find(c => c.key === categoryKey);
+            const typeSelector = document.getElementById(`chart${i}-type`); const type = typeSelector.value; const metricKey = document.getElementById(`chart${i}-metric`).value; const metricDef = activeColumnDefinitions.find(c => c.key === metricKey);
+            const toggleBtn = document.getElementById(`chart${i}-labels-toggle`); const titleEl = document.getElementById(`chart${i}-title`);
+            if (!categoryDef || !metricDef) { if(charts[`chart${i}`]) charts[`chart${i}`].destroy(); titleEl.textContent = `Análise por Categoria ${i}`; return; }
+            titleEl.textContent = `${metricDef.label} por ${categoryDef.label}`;
+            // --- UPDATED DATALABEL OPTIONS ---
             const options = {
                 plugins: {
+                    tooltip: { callbacks: { label: (context) => formatChartValue(context, metricDef) } },
                     datalabels: {
-                        display: chartLabelsState[`chart${i}`],
-                        formatter: (value) => formatCurrency(value),
+                        display: chartLabelsState[`chart${i}`], // Controlled by toggle
+                        formatter: (value, context) => {
+                            // Use the updated formatChartValue for datalabels too
+                             return formatChartValue(context, metricDef);
+                        },
                         color: '#fff',
-                        anchor: 'end',
-                        align: 'start',
-                        offset: -10,
+                        anchor: 'end', // Tenta ancorar no final da fatia
+                        align: 'end', // Tenta alinhar ao final
+                        offset: 8, // Afasta um pouco mais
                         borderRadius: 4,
-                        backgroundColor: (context) => context.dataset.backgroundColor + 'AA',
-                        padding: 4
+                        backgroundColor: (context) => (context.dataset.backgroundColor || chartColors[0]) + 'CC', // Slightly more opaque
+                        padding: { top: 2, bottom: 2, left: 4, right: 4 }, // Add padding
+                        font: {
+                            size: 10 // Reduce font size slightly
+                        },
+                        textAlign: 'center' // Center multi-line text
                     }
                 }
             };
-            drawOrUpdateChart(`chart${i}`, type, { labels, datasets: chartDatasets}, options);
+             // --- END OF UPDATED OPTIONS ---
+
+            if (isComparisonActive && comparisonData.length > 0) {
+                const chartType = 'bar'; typeSelector.value = 'bar'; typeSelector.disabled = true; toggleBtn.style.display = 'none'; 
+                
+                // [CORRIGIDO] aggregateCategoricalData agora calcula taxas corretamente
+                const groupedDataA = aggregateCategoricalData(filteredData, categoryKey, metricKey); 
+                const groupedDataB = aggregateCategoricalData(comparisonData, categoryKey, metricKey);
+                
+                const labels = [...new Set([...Object.keys(groupedDataA), ...Object.keys(groupedDataB)])].sort(); const dataA = labels.map(l => groupedDataA[l] || 0); const dataB = labels.map(l => groupedDataB[l] || 0);
+                const chartDatasets = [{ label: 'Período A', data: dataA, backgroundColor: chartColors[0] + '90' }, { label: 'Período B', data: dataB, backgroundColor: chartColors[1] }];
+                if (!showComparisonDetails) { chartDatasets.pop(); options.plugins.legend = { display: false }; } else options.plugins.legend = { display: true };
+                // Disable datalabels for comparison bar charts as they get too cluttered
+                options.plugins.datalabels.display = false;
+                drawOrUpdateChart(`chart${i}`, chartType, { labels, datasets: chartDatasets }, options);
+            } else {
+                const chartType = type; typeSelector.disabled = false; toggleBtn.style.display = (chartType === 'pie' || chartType === 'doughnut') ? 'block' : 'none';
+                
+                // [CORRIGIDO] aggregateCategoricalData agora calcula taxas corretamente
+                const groupedData = aggregateCategoricalData(filteredData, categoryKey, metricKey); 
+                
+                const labels = Object.keys(groupedData).sort((a,b) => groupedData[b] - groupedData[a]); const data = labels.map(l => groupedData[l]);
+                const chartDatasets = [{ label: metricDef.label, data: data, backgroundColor: chartColors }];
+                // Ensure datalabels are potentially displayed for pie/doughnut
+                options.plugins.datalabels.display = chartLabelsState[`chart${i}`] && (chartType === 'pie' || chartType === 'doughnut');
+                drawOrUpdateChart(`chart${i}`, chartType, { labels, datasets: chartDatasets }, options);
+            }
         });
     }
 
-    async function generateCanvas() {
-        const content = document.getElementById('printable-content');
-        content.classList.add('export-render');
-        await new Promise(resolve => setTimeout(resolve, 50));
-        const canvas = await html2canvas(content, { 
-            backgroundColor: '#0f172a', 
-            scale: 1.5,
-            useCORS: true,
-            allowTaint: true
+    /**
+     * [CORRIGIDO] Agrega dados por data, garantindo que as métricas de base
+     * (spend, leads, etc.) sejam sempre somadas para calcular as taxas corretamente.
+     */
+    function aggregateTimeSeriesData(data, metrics) {
+        const timeData = data.reduce((acc, item) => {
+            if (!item.date) return acc;
+            const key = item.date.toISOString().split('T')[0];
+            if (!acc[key]) {
+                acc[key] = {
+                    rowCount: 0, spend: 0, leads: 0, clicks: 0, impressions: 0
+                };
+                // Inicializa outras métricas visíveis
+                metrics.forEach(col => {
+                     if (!['spend', 'leads', 'clicks', 'impressions'].includes(col.key)) {
+                         acc[key][col.key] = 0;
+                     }
+                });
+            }
+            
+            acc[key].rowCount++;
+            acc[key].spend += (item.spend || 0);
+            acc[key].leads += (item.leads || 0);
+            acc[key].clicks += (item.clicks || 0);
+            acc[key].impressions += (item.impressions || 0);
+            
+            // Acumula outras métricas visíveis (que não sejam taxas)
+            metrics.forEach(col => {
+                const k = col.key;
+                if (!['spend', 'leads', 'clicks', 'impressions', 'cpl', 'cpc', 'cpm', 'ctr'].includes(k)) {
+                     if (typeof item[k] === 'number' && isFinite(item[k])) {
+                         acc[key][k] += item[k];
+                     }
+                }
+            });
+            return acc;
+        }, {});
+
+        // Calcula taxas e médias para cada dia
+        Object.values(timeData).forEach(day => {
+            metrics.forEach(col => {
+                const k = col.key;
+                if (k === 'cpl') {
+                    day[k] = day.leads > 0 ? day.spend / day.leads : 0;
+                } else if (k === 'cpc') {
+                    day[k] = day.clicks > 0 ? day.spend / day.clicks : 0;
+                } else if (k === 'cpm') {
+                    day[k] = day.impressions > 0 ? (day.spend / day.impressions) * 1000 : 0;
+                } else if (k === 'ctr') {
+                    day[k] = day.impressions > 0 ? day.clicks / day.impressions : 0;
+                } else if (getAggregationType(k) === 'avg' && !['spend', 'leads', 'clicks', 'impressions'].includes(k)) {
+                    // Calcula média para outras métricas 'avg' (ex: colunas custom)
+                    day[k] = day.rowCount > 0 ? day[k] / day.rowCount : 0;
+                }
+                 // 'sum' metrics (spend, leads, clicks, etc.) já estão corretas
+            });
         });
-        content.classList.remove('export-render');
-        return canvas;
+        return timeData;
+    }
+    
+    /**
+     * [CORRIGIDO] Agrega dados por categoria, garantindo que as métricas de base
+     * (spend, leads, etc.) sejam sempre somadas para calcular a métrica de taxa final.
+     */
+    function aggregateCategoricalData(data, categoryKey, metricKey) {
+        const grouped = data.reduce((acc, item) => {
+            const group = item[categoryKey] || 'N/A';
+            if (!acc[group]) {
+                acc[group] = {
+                    sum: 0, count: 0, // 'sum' e 'count' são para métricas não-taxa
+                    spend: 0, leads: 0, clicks: 0, impressions: 0
+                };
+            }
+            
+            // Acumula a métrica específica (para casos de 'avg' ou 'sum' simples)
+            if (typeof item[metricKey] === 'number' && isFinite(item[metricKey])) {
+                acc[group].sum += item[metricKey]; 
+                acc[group].count++;
+            }
+            
+            // Sempre acumula métricas de base
+            acc[group].spend += (item.spend || 0);
+            acc[group].leads += (item.leads || 0);
+            acc[group].clicks += (item.clicks || 0);
+            acc[group].impressions += (item.impressions || 0);
+            return acc;
+        }, {});
+
+        const finalData = {};
+        for (const group in grouped) {
+            const g = grouped[group];
+            // Calcula métricas de taxa CORRETAMENTE a partir dos totais
+            if (metricKey === 'cpl') {
+                finalData[group] = g.leads > 0 ? g.spend / g.leads : 0;
+            } else if (metricKey === 'cpc') {
+                finalData[group] = g.clicks > 0 ? g.spend / g.clicks : 0;
+            } else if (metricKey === 'cpm') {
+                finalData[group] = g.impressions > 0 ? (g.spend / g.impressions) * 1000 : 0;
+            } else if (metricKey === 'ctr') {
+                finalData[group] = g.impressions > 0 ? g.clicks / g.impressions : 0;
+            } else if (getAggregationType(metricKey) === 'avg') {
+                // Fallback para outras métricas 'avg'
+                finalData[group] = g.count > 0 ? g.sum / g.count : 0;
+            } else { 
+                // Fallback para métricas 'sum' (spend, leads, clicks, etc.)
+                // Note: se metricKey for 'spend', g.sum será igual a g.spend
+                finalData[group] = g.sum;
+            }
+        }
+        return finalData;
     }
 
-    async function downloadImage() {
-        elements.loadingOverlay.querySelector('p').textContent = 'Gerando Imagem...'; elements.loadingOverlay.classList.remove('hidden');
-        const canvas = await generateCanvas(); const link = document.createElement('a'); link.download = 'dashboard-analytics.png'; link.href = canvas.toDataURL('image/png'); link.click(); elements.loadingOverlay.classList.add('hidden');
+    function drawOrUpdateChart(id, type, data, options = {}) { if (charts[id]) charts[id].destroy(); const ctx = document.getElementById(id); if (ctx) charts[id] = new Chart(ctx, { type, data, options }); }
+
+    // --- Lógica do Modal de Visão ---
+
+    function showToast(message) { elements.toastMessage.textContent = message; elements.toast.classList.remove('hidden', 'translate-x-full'); elements.toast.classList.add('translate-x-0'); setTimeout(() => { elements.toast.classList.remove('translate-x-0'); elements.toast.classList.add('translate-x-full'); setTimeout(() => elements.toast.classList.add('hidden'), 300); }, 3000); }
+    function openViewModal() { modalColumnDefinitions = JSON.parse(JSON.stringify(activeColumnDefinitions)); renderModalColumnList(); renderModalHiddenCsvCols(); renderPresetList(); elements.viewModal.classList.remove('hidden'); }
+    function closeViewModal() { elements.viewModal.classList.add('hidden'); }
+
+    function renderModalColumnList() {
+        const searchTerm = elements.modalColumnSearch.value.toLowerCase(); const list = elements.modalColumnList; list.innerHTML = '';
+        let filteredCols = modalColumnDefinitions.filter(col => col.label.toLowerCase().includes(searchTerm) || col.key.toLowerCase().includes(searchTerm));
+        filteredCols.sort((a, b) => (a.order || 999) - (b.order || 999));
+        filteredCols.forEach(col => {
+            const item = document.createElement('div'); item.className = 'column-item'; item.dataset.key = col.key;
+            const filterCheckbox = col.type === 'string' ? `<label class="flex items-center text-xs text-slate-300 ml-4" title="Marque para usar esta coluna como filtro global"><input type="checkbox" class="custom-checkbox modal-col-filterable" data-key="${col.key}" ${col.isFilterable ? 'checked' : ''}><span class="ml-1">Filtro?</span></label>` : '';
+            item.innerHTML = `<span class="drag-handle"><i class="fas fa-grip-vertical"></i></span><input type="checkbox" class="custom-checkbox modal-col-visible" data-key="${col.key}" ${col.visible ? 'checked' : ''}><span class="flex-grow ml-2">${col.label} <span class="text-xs text-slate-400">(${col.type})</span></span>${filterCheckbox}<button class="modal-col-pin text-slate-400 hover:text-indigo-400 p-1 ml-auto" data-key="${col.key}" title="Fixar no topo dos KPIs"><i class="fas fa-thumbtack ${col.pinned ? 'text-indigo-400' : ''}"></i></button>`;
+            list.appendChild(item);
+        });
+        if (list.sortableInstance) list.sortableInstance.destroy();
+        list.sortableInstance = new Sortable(list, { handle: '.drag-handle', animation: 150, ghostClass: 'sortable-ghost', onEnd: (evt) => { const key = evt.item.dataset.key; const col = modalColumnDefinitions.find(c => c.key === key); modalColumnDefinitions.splice(modalColumnDefinitions.indexOf(col), 1); modalColumnDefinitions.splice(evt.newIndex, 0, col); modalColumnDefinitions.forEach((c, i) => c.order = i + 1); renderModalColumnList(); } });
+        list.querySelectorAll('.modal-col-visible').forEach(cb => { cb.addEventListener('change', (e) => { const col = modalColumnDefinitions.find(c => c.key === e.target.dataset.key); if (col) col.visible = e.target.checked; }); });
+        list.querySelectorAll('.modal-col-filterable').forEach(cb => { cb.addEventListener('change', (e) => { const col = modalColumnDefinitions.find(c => c.key === e.target.dataset.key); if (col) col.isFilterable = e.target.checked; }); });
+        list.querySelectorAll('.modal-col-pin').forEach(btn => { btn.addEventListener('click', (e) => { const button = e.currentTarget; const col = modalColumnDefinitions.find(c => c.key === button.dataset.key); if (col) { col.pinned = !col.pinned; button.querySelector('i').classList.toggle('text-indigo-400', col.pinned); } }); });
     }
 
-    async function downloadPDF() {
-        elements.loadingOverlay.querySelector('p').textContent = 'Gerando PDF...'; elements.loadingOverlay.classList.remove('hidden');
-        const canvas = await generateCanvas(); const imgData = canvas.toDataURL('image/jpeg', 0.9); 
-        const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' }); const pdfWidth = pdf.internal.pageSize.getWidth(); const pdfHeight = pdf.internal.pageSize.getHeight(); const imgProps = pdf.getImageProperties(imgData);
-        const imgHeight = (imgProps.height * pdfWidth) / imgProps.width; let heightLeft = imgHeight, position = 0;
-        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight, undefined, 'FAST'); heightLeft -= pdfHeight;
-        while (heightLeft > 0) { position -= pdfHeight; pdf.addPage(); pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight, undefined, 'FAST'); heightLeft -= pdfHeight; }
-        pdf.save('dashboard-analytics.pdf'); elements.loadingOverlay.classList.add('hidden');
+    function renderModalHiddenCsvCols() {
+        const activeKeys = new Set(modalColumnDefinitions.map(c => c.key)); const hiddenCols = baseColumnDefinitions.filter(c => !activeKeys.has(c.key));
+        const container = elements.modalHiddenCsvCols; container.innerHTML = '';
+        if (hiddenCols.length === 0) { container.innerHTML = '<p class="text-slate-400">Nenhuma coluna do CSV oculta.</p>'; return; }
+        hiddenCols.forEach(col => {
+            const btn = document.createElement('button'); btn.className = "bg-slate-600 hover:bg-slate-700 text-sm py-1 px-3 rounded-full mr-2 mb-2"; btn.textContent = `${col.label} +`; btn.title = `Adicionar coluna ${col.label} (Tipo: ${col.type})`;
+            btn.addEventListener('click', () => { modalColumnDefinitions.push({ ...col, visible: true, order: modalColumnDefinitions.length + 1 }); renderModalHiddenCsvCols(); document.querySelector('.modal-tab[data-tab="tab-display"]').click(); renderModalColumnList(); }); container.appendChild(btn);
+        });
     }
+
+    function addCalculatedColumn() {
+        const label = elements.calcColName.value.trim(); const type = elements.calcColType.value; const formula = elements.calcColFormula.value.trim(); const errorEl = elements.calcColError;
+        errorEl.classList.add('hidden'); if (!label || !formula) { errorEl.textContent = 'Nome e fórmula são obrigatórios.'; errorEl.classList.remove('hidden'); return; }
+        const key = `calc_${label.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/__/g, '_')}`; if (modalColumnDefinitions.some(c => c.key === key || c.label.toLowerCase() === label.toLowerCase())) { errorEl.textContent = 'Uma coluna com esse nome ou chave já existe.'; errorEl.classList.remove('hidden'); return; }
+        const match = formula.match(/\[([^\]]+)\]\s*([\+\-\*\/])\s*\[([^\]]+)\]/); if (!match) { errorEl.textContent = 'Fórmula inválida. Use o formato: [Coluna A] op [Coluna B]'; errorEl.classList.remove('hidden'); return; }
+        const [_, labelA, op, labelB] = match; const allAvailableCols = [...baseColumnDefinitions, ...modalColumnDefinitions.filter(c => c.source === 'calculated')];
+        const colA = findColumnByLabel(labelA, allAvailableCols); const colB = findColumnByLabel(labelB, allAvailableCols);
+        if (!colA || !colB) { errorEl.textContent = `Colunas não encontradas: ${!colA ? `"${labelA}"` : 'OK'} | ${!colB ? `"${labelB}"` : 'OK'}`; errorEl.classList.remove('hidden'); return; }
+        const newCol = { key, label, type, formula, visible: true, isFilterable: false, pinned: false, source: 'calculated', order: modalColumnDefinitions.length + 1 };
+        modalColumnDefinitions.push(newCol); elements.calcColName.value = ''; elements.calcColFormula.value = ''; document.querySelector('.modal-tab[data-tab="tab-display"]').click(); renderModalColumnList(); showToast(`Coluna "${label}" adicionada!`);
+    }
+
+    function applyModalView() {
+        const orderedKeys = [...elements.modalColumnList.querySelectorAll('.column-item')].map(el => el.dataset.key); let reorderedCols = [];
+        orderedKeys.forEach((key, i) => { const col = modalColumnDefinitions.find(c => c.key === key); if (col) { col.order = i + 1; reorderedCols.push(col); } });
+        let maxOrder = reorderedCols.length; modalColumnDefinitions.forEach(col => { if (!reorderedCols.find(c => c.key === col.key)) { col.order = ++maxOrder; reorderedCols.push(col); } });
+        applyView(reorderedCols); closeViewModal(); showToast('Visão aplicada!');
+    }
+
+    function resetViewToDefault() { if (confirm('Tem certeza que deseja resetar a visão para o padrão? Isso não afetará suas predefinições salvas.')) { applyView(baseColumnDefinitions); closeViewModal(); showToast('Visão resetada para o padrão.'); } }
+
+    function applyView(newViewDefs, isInitialLoad = false) {
+        activeColumnDefinitions = reconcileView(newViewDefs, baseColumnDefinitions);
+        reprocessDataWithView(activeColumnDefinitions);
+        localStorage.setItem(LAST_VIEW_LS_KEY, JSON.stringify(activeColumnDefinitions));
+        updateGraphSelectors();
+        // Crucial: Chamar populateDynamicUI AQUI depois que activeColumnDefinitions for atualizado
+        populateDynamicUI();
+        // Apenas chama applyFilters se NÃO for a carga inicial, pois processData chamará no final
+        if (!isInitialLoad) {
+            applyFilters();
+        }
+    }
+
+
+    function reconcileView(savedCols, detectedCols) {
+        let reconciled = []; const detectedMap = new Map(detectedCols.map(c => [c.key, c])); const savedKeys = new Set();
+        savedCols.forEach(savedCol => { if (savedCol.source === 'calculated' || detectedMap.has(savedCol.key)) { const baseCol = detectedMap.get(savedCol.key) || {}; reconciled.push({ ...baseCol, ...savedCol }); savedKeys.add(savedCol.key); } });
+        detectedCols.forEach(detectedCol => { if (!savedKeys.has(detectedCol.key)) reconciled.push({ ...detectedCol, visible: detectedCol.isFilterable, order: (detectedCol.order || 999) + 1000 }); }); // Changed visible default based on isFilterable
+        return reconciled.sort((a,b) => (a.order || 999) - (b.order || 999));
+    }
+
+    function updateGraphSelectors() {
+        const numericMetrics = activeColumnDefinitions.filter(c => c.visible && ['number', 'currency', 'percent'].includes(c.type)).sort((a,b) => (a.order || 999) - (b.order || 999));
+        const filterableStrings = activeColumnDefinitions.filter(c => c.visible && c.isFilterable && c.type === 'string').sort((a,b) => (a.order || 999) - (b.order || 999));
+        document.querySelectorAll('.metric-selector').forEach(sel => { const currentVal = sel.value; sel.innerHTML = ''; if (numericMetrics.length === 0) { sel.innerHTML = '<option value="">Nenhuma Métrica</option>'; return; } numericMetrics.forEach(m => sel.add(new Option(m.label, m.key))); if (numericMetrics.some(m => m.key === currentVal)) sel.value = currentVal; else if(numericMetrics.length > 0) sel.value = numericMetrics[0].key; }); // Select first metric if previous is gone
+        document.querySelectorAll('.category-selector').forEach((sel, i) => { const currentVal = sel.value; sel.innerHTML = ''; if (filterableStrings.length === 0) { sel.innerHTML = '<option value="">Nenhuma Categoria</option>'; return; } filterableStrings.forEach(c => sel.add(new Option(c.label, c.key))); if (filterableStrings.some(c => c.key === currentVal)) sel.value = currentVal; else if (filterableStrings[i]) sel.value = filterableStrings[i].key; else if (filterableStrings[0]) sel.value = filterableStrings[0].key; });
+    }
+
+    function reprocessDataWithView(viewDefs) { const customCalcCols = viewDefs.filter(c => c.source === 'calculated' && c.formula); const allCols = [...baseColumnDefinitions, ...customCalcCols]; originalData = originalData.map(row => { const newRow = { ...row }; customCalcCols.forEach(col => newRow[col.key] = parseAndCalculate(col.formula, newRow, allCols)); return newRow; }); }
+    function findColumnByLabel(label, cols) { const lowerLabel = label.toLowerCase().trim(); return cols.find(c => c.label.toLowerCase().trim() === lowerLabel); }
+
+    function parseAndCalculate(formula, row, allCols) {
+        try { const match = formula.match(/\[([^\]]+)\]\s*([\+\-\*\/])\s*\[([^\]]+)\]/); if (!match) return null; const [_, labelA, op, labelB] = match; const colA = findColumnByLabel(labelA, allCols); const colB = findColumnByLabel(labelB, allCols); if (!colA || !colB) return null; const valA = row[colA.key]; const valB = row[colB.key]; if (typeof valA !== 'number' || typeof valB !== 'number') return null;
+            switch (op) { case '+': return valA + valB; case '-': return valA - valB; case '*': return valA * valB; case '/': return valB !== 0 ? valA / valB : null; default: return null; }
+        } catch (e) { console.error(`Error calculating formula "${formula}":`, e); return null; }
+    }
+
+    // --- Lógica de Predefinições (Presets) ---
+
+    function loadPresets() { try { const presetsJson = localStorage.getItem(PRESETS_LS_KEY); allPresets = presetsJson ? JSON.parse(presetsJson) : []; } catch (e) { console.error("Error loading presets:", e); allPresets = []; } renderPresetList(); }
+    function renderPresetList() { const container = elements.presetList; container.innerHTML = ''; if (allPresets.length === 0) { container.innerHTML = '<p class="text-slate-400">Nenhuma predefinição salva.</p>'; return; } allPresets.sort((a, b) => a.name.localeCompare(b.name)); allPresets.forEach(preset => { const item = document.createElement('div'); item.className = 'flex justify-between items-center p-3 bg-slate-700 rounded-lg'; item.innerHTML = `<span class="font-medium">${preset.name}</span><div><button class="preset-load-btn bg-indigo-600 hover:bg-indigo-700 text-white py-1 px-3 rounded-md text-sm" data-name="${preset.name}">Carregar</button><button class="preset-delete-btn text-red-400 hover:text-red-300 py-1 px-3 rounded-md text-sm" data-name="${preset.name}"><i class="fas fa-trash"></i></button></div>`; container.appendChild(item); }); container.querySelectorAll('.preset-load-btn').forEach(btn => btn.addEventListener('click', (e) => loadPreset(e.target.dataset.name))); container.querySelectorAll('.preset-delete-btn').forEach(btn => btn.addEventListener('click', (e) => deletePreset(e.target.closest('[data-name]').dataset.name))); }
+    function savePreset() { const name = elements.presetSaveName.value.trim(); if (!name) { showToast('Por favor, dê um nome para a predefinição.'); return; } const existingIndex = allPresets.findIndex(p => p.name === name); if (existingIndex > -1) { if (!confirm(`Uma predefinição com o nome "${name}" já existe. Deseja sobrescrevê-la?`)) return; allPresets.splice(existingIndex, 1); } const newPreset = { name, createdAt: Date.now(), version: 1, columns: JSON.parse(JSON.stringify(modalColumnDefinitions)) }; allPresets.push(newPreset); localStorage.setItem(PRESETS_LS_KEY, JSON.stringify(allPresets)); elements.presetSaveName.value = ''; renderPresetList(); showToast(`Predefinição "${name}" salva!`); }
+    function loadPreset(name) { const preset = allPresets.find(p => p.name === name); if (!preset) { showToast('Erro: predefinição não encontrada.'); return; } applyView(preset.columns); closeViewModal(); showToast(`Predefinição "${name}" carregada!`); }
+    function deletePreset(name) { if (!confirm(`Tem certeza que deseja excluir a predefinição "${name}"?`)) return; allPresets = allPresets.filter(p => p.name !== name); localStorage.setItem(PRESETS_LS_KEY, JSON.stringify(allPresets)); renderPresetList(); showToast(`Predefinição "${name}" excluída.`); }
+
+    // --- Lógica de Exportação ---
+
+    async function generateCanvas() { const content = document.getElementById('printable-content'); content.classList.add('export-render'); await new Promise(resolve => setTimeout(resolve, 50)); const canvas = await html2canvas(content, { backgroundColor: '#0f172a', scale: 1.5, useCORS: true, allowTaint: true }); content.classList.remove('export-render'); return canvas; }
+    async function downloadImage() { elements.loadingOverlay.querySelector('p').textContent = 'Gerando Imagem...'; elements.loadingOverlay.classList.remove('hidden'); const canvas = await generateCanvas(); const link = document.createElement('a'); link.download = 'dashboard-analytics.png'; link.href = canvas.toDataURL('image/png'); link.click(); elements.loadingOverlay.classList.add('hidden'); }
+    async function downloadPDF() { elements.loadingOverlay.querySelector('p').textContent = 'Gerando PDF...'; elements.loadingOverlay.classList.remove('hidden'); const canvas = await generateCanvas(); const imgData = canvas.toDataURL('image/jpeg', 0.9); const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' }); const pdfWidth = pdf.internal.pageSize.getWidth(); const pdfHeight = pdf.internal.pageSize.getHeight(); const imgProps = pdf.getImageProperties(imgData); const imgHeight = (imgProps.height * pdfWidth) / imgProps.width; let heightLeft = imgHeight, position = 0; pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight, undefined, 'FAST'); heightLeft -= pdfHeight; while (heightLeft > 0) { position -= pdfHeight; pdf.addPage(); pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight, undefined, 'FAST'); heightLeft -= pdfHeight; } pdf.save('dashboard-analytics.pdf'); elements.loadingOverlay.classList.add('hidden'); }
+    function downloadAnalysisCSV() { const cols = activeColumnDefinitions.filter(c => c.visible && ['number', 'currency', 'percent'].includes(c.type)).sort((a, b) => (a.order || 999) - (b.order || 999)); let headers = ['Campanha']; let data = []; if (!isComparisonActive || comparisonData.length === 0) { cols.forEach(c => headers.push(c.label)); data = tableProcessedData.map(row => { const csvRow = [row.campaignName]; cols.forEach(col => csvRow.push(formatForCsv(row[col.key], col.type))); return csvRow; }); } else { cols.forEach(c => { headers.push(`${c.label} (A)`); if (showComparisonDetails) headers.push(`${c.label} (B)`); headers.push(`Δ Abs (${c.label})`); headers.push(`Δ % (${c.label})`); }); data = tableProcessedData.map(row => { const csvRow = [row.campaignName]; cols.forEach(col => { const deltaType = col.type === 'percent' ? 'number' : col.type; csvRow.push(formatForCsv(row[`${col.key}_A`], col.type)); if (showComparisonDetails) csvRow.push(formatForCsv(row[`${col.key}_B`], col.type)); csvRow.push(formatForCsv(row[`${col.key}_D_Abs`], deltaType)); csvRow.push(formatForCsv(row[`${col.key}_D_Pct`], 'percent')); }); return csvRow; }); } const csv = Papa.unparse({ fields: headers, data }, { delimiter: ";" }); const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'analise_exportacao.csv'; link.click(); }
+    function formatForCsv(val, type) { if (val === null || typeof val === 'undefined' || isNaN(val)) return ""; if (type === 'percent') { if (val === Infinity) return "Novo"; return (val * 100).toFixed(2).replace('.', ','); } if (type === 'currency' || type === 'number') { if (Number.isInteger(val) && type === 'number') return val.toString(); return val.toFixed(2).replace('.', ','); } return val; }
+
+    // --- Lógica da AI ---
 
     async function generateInsights() {
         elements.aiBtn.disabled = true; elements.aiContent.classList.add('hidden'); elements.aiLoading.classList.remove('hidden');
-        if (filteredData.length === 0) { elements.aiContent.textContent = 'Não há dados para gerar uma análise.'; elements.aiBtn.disabled = false; elements.aiContent.classList.remove('hidden'); elements.aiLoading.classList.add('hidden'); return; }
-        const totalSpend = filteredData.reduce((s, r) => s + r.spend, 0);
-        let insightsData = `- Investimento Total: ${formatCurrency(totalSpend)}`;
-        if (has.leads) {
-            const totalLeads = filteredData.reduce((s, r) => s + r.leads, 0);
-            insightsData += ` - Total de Leads: ${formatNumber(totalLeads)} - CPL Médio: ${formatCurrency(totalLeads > 0 ? totalSpend / totalLeads : 0)}`;
-        }
-        const campaignSpend = filteredData.reduce((acc, row) => { if (row.campaignName !== 'N/A') { acc[row.campaignName] = (acc[row.campaignName] || 0) + row.spend; } return acc; }, {});
-        const topCampaign = Object.keys(campaignSpend).length > 0 ? Object.entries(campaignSpend).sort(([, a], [, b]) => b - a)[0] : null;
-        insightsData += ` - Campanha com maior investimento: ${topCampaign ? topCampaign[0] : 'N/A'} (${formatCurrency(topCampaign ? topCampaign[1] : 0)}) - Período: ${document.getElementById('filter-start-date').value || 'Início'} a ${document.getElementById('filter-end-date').value || 'Fim'}.`;
+        if (!originalData || originalData.length === 0 || !filteredData || filteredData.length === 0) { elements.aiContent.textContent = 'Não há dados suficientes (após filtros) para gerar uma análise.'; elements.aiBtn.disabled = false; elements.aiContent.classList.remove('hidden'); elements.aiLoading.classList.add('hidden'); return; }
+        const visibleMetrics = activeColumnDefinitions.filter(c => c.visible && ['number', 'currency', 'percent'].includes(c.type));
+        let insightsData = `Período A: ${elements.filterStartDateA.value || 'Início'} a ${elements.filterEndDateA.value || 'Fim'}.`;
         
-        const prompt = `Aja como um analista de marketing. Analise os dados a seguir e forneça insights em português. Dados: ${insightsData} Forneça uma análise concisa em 3 parágrafos: 1. Resumo da performance. 2. Ponto positivo e ponto de atenção. 3. Recomendação para otimização.`;
-        const maxRetries = 3;
-        for (let attempt = 0; attempt < maxRetries; attempt++) {
+        // [CORRIGIDO] Usa a nova função de agregação para os insights
+        visibleMetrics.forEach(col => {
+            const value = aggregateMetric(filteredData, col);
+            insightsData += ` - ${col.label} (A): ${formatValue(value, col.type)}`; 
+        });
+        
+        if (isComparisonActive && comparisonData.length > 0) {
+             insightsData += `\nPeríodo B: ${elements.filterStartDateB.value || 'Início'} a ${elements.filterEndDateB.value || 'Fim'}.`;
+             // [CORRIGIDO] Usa a nova função de agregação para os insights
+             visibleMetrics.forEach(col => { 
+                const value = aggregateMetric(comparisonData, col); 
+                insightsData += ` - ${col.label} (B): ${formatValue(value, col.type)}`; 
+            });
+        }
+        
+        const topCampaign = tableProcessedData.length > 0 ? tableProcessedData[0] : null; if (topCampaign) insightsData += ` - Campanha com melhor performance (Período A, ordenado por ${tableState.sortColumn}): ${topCampaign.campaignName}`;
+        const prompt = `Aja como um analista de marketing. Analise os dados a seguir e forneça insights em português. Dados:\n${insightsData}\n\nForneça uma análise concisa em 3 parágrafos:\n1. Resumo da performance ${isComparisonActive ? 'comparando Período A e B' : 'do Período A'}.\n2. Ponto positivo e ponto de atenção.\n3. Recomendação para otimização.`;
+        const maxRetries = 3; let attempt = 0;
+        while(attempt < maxRetries) {
             try {
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_API_KEY}`;
                 const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
-                if (response.status === 503 && attempt < maxRetries - 1) { await new Promise(res => setTimeout(res, Math.pow(2, attempt) * 1000)); continue; }
+                if (response.status === 429 || response.status === 503) {
+                     if (attempt === maxRetries - 1) throw new Error(`API Overloaded after ${maxRetries} attempts.`);
+                     await new Promise(res => setTimeout(res, Math.pow(2, attempt) * 1000 + Math.random()*1000)); attempt++; continue;
+                }
                 if (!response.ok) { const errorBody = await response.text(); throw new Error(`API Error ${response.status}: ${errorBody}`); }
-                const result = await response.json();
-                const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (!text) throw new Error('Resposta da API inválida.');
-                elements.aiContent.textContent = text;
-                break;
-            } catch (error) { 
+                const result = await response.json(); const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!text) throw new Error('Invalid API response.');
+                elements.aiContent.textContent = text; break;
+            } catch (error) {
                 console.error(`Gemini API Error (Attempt ${attempt + 1}):`, error);
-                if (attempt === maxRetries - 1) { elements.aiContent.textContent = 'Não foi possível gerar a análise. O serviço pode estar sobrecarregado. Tente novamente mais tarde.'; }
+                if (attempt === maxRetries - 1) elements.aiContent.textContent = 'Não foi possível gerar a análise. O serviço pode estar sobrecarregado ou ocorreu um erro. Tente novamente mais tarde.';
+                attempt++;
             }
         }
         elements.aiBtn.disabled = false; elements.aiContent.classList.remove('hidden'); elements.aiLoading.classList.add('hidden');
@@ -440,4 +1437,3 @@
 </script>
 </body>
 </html>
-
