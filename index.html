@@ -14,54 +14,179 @@
     <!-- Sortable.js para Drag and Drop -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <!-- Favicon (Ícone da Aba) -->
-    <link rel="icon" type="image/png" href="logoGrafico.png">
+    
+    <!-- Favicon (Ícone da Aba) - Corrigido para SVG nítido -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>">
+    
     <style>
-        body { background-color: #0f172a; color: #e2e8f0; font-family: 'Inter', sans-serif; }
-        .card { background-color: #1e293b; border-radius: 0.75rem; padding: 1.5rem; border: 1px solid #334155; display: flex; flex-direction: column; transition: all 0.3s ease-in-out; }
-        .card-title { color: #94a3b8; font-weight: 500; }
-        .card-value { color: #f1f5f9; font-size: 1.75rem; font-weight: 700; }
+        body { 
+            /* background-color: #0f172a; */ /* Removido */
+            color: #e2e8f0; 
+            font-family: 'Inter', sans-serif; 
+            /* Fundo estilo Glassmorphism */
+            background: url('https://images.unsplash.com/photo-1614850523060-8da1d56ae167?auto=format&fit=crop&w=1770&q=80') no-repeat center center fixed;
+            background-size: cover;
+        }
+
+        /* Estilo Glassmorphism para os cards */
+        .card { 
+            background-color: rgba(30, 41, 59, 0.6); /* Glassy slate */
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            border-radius: 0.75rem; 
+            padding: 1.5rem; 
+            display: flex; 
+            flex-direction: column; 
+            transition: all 0.3s ease-in-out; 
+        }
+
+        /* Header com estilo Glassmorphism */
+        .header-card {
+            background-color: rgba(30, 41, 59, 0.4); /* Menos opaco */
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            border-radius: 0.75rem; 
+        }
+
+        /* Rodapé com estilo Glassmorphism */
+        .footer-glass {
+            background-color: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        h1, h2 { color: #ffffff; }
+        .card-title { color: #cbd5e1; font-weight: 500; }
+        
+        /* CORREÇÃO: Valor do KPI com quebra de linha */
+        .card-value { 
+            color: #f1f5f9; 
+            font-size: 1.75rem; 
+            font-weight: 700; 
+            overflow-wrap: break-word; /* Quebra strings longas */
+            word-break: break-all;     /* Quebra dentro da palavra se necessário */
+            line-height: 1.25;         /* Ajusta altura da linha para texto quebrado */
+        }
+        
         .chart-container { position: relative; flex-grow: 1; min-height: 350px; }
-        #file-drop-zone { border: 2px dashed #334155; border-radius: 0.75rem; padding: 2rem; text-align: center; cursor: pointer; transition: background-color 0.2s, border-color 0.2s; }
-        #file-drop-zone:hover, #file-drop-zone.dragover { background-color: #1e293b; border-color: #4f46e5; }
-        .form-input, .filter-select, .filter-input, .search-input { background-color: #334155; border: 1px solid #475569; color: #e2e8f0; border-radius: 0.375rem; padding: 0.5rem; width: 100%; }
-        .chart-type-selector, .category-selector, .metric-selector { background-color: #334155; border: 1px solid #475569; color: #cbd5e1; border-radius: 0.375rem; padding: 0.25rem 0.5rem; font-size: 0.875rem; }
+        
+        #file-drop-zone { 
+            border: 2px dashed rgba(255, 255, 255, 0.2); 
+            border-radius: 0.75rem; 
+            padding: 2rem; 
+            text-align: center; 
+            cursor: pointer; 
+            transition: background-color 0.2s, border-color 0.2s;
+            background-color: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(8px);
+        }
+        #file-drop-zone:hover, #file-drop-zone.dragover { 
+            background-color: rgba(30, 41, 59, 0.7); 
+            border-color: #4f46e5; 
+        }
+
+        /* Inputs e Selects com estilo Glassmorphism */
+        .form-input, .filter-select, .filter-input, .search-input { 
+            background-color: rgba(51, 65, 85, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e2e8f0; 
+            border-radius: 0.375rem; 
+            padding: 0.5rem; 
+            width: 100%; 
+        }
+        .form-input::placeholder, .filter-input::placeholder, .search-input::placeholder {
+            color: #94a3b8;
+        }
+
+        .chart-type-selector, .category-selector, .metric-selector { 
+            background-color: rgba(51, 65, 85, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #cbd5e1; 
+            border-radius: 0.375rem; 
+            padding: 0.25rem 0.5rem; 
+            font-size: 0.875rem; 
+        }
+
         .chart-type-selector:disabled { opacity: 0.5; cursor: not-allowed; }
         input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8); }
         .spinner { border: 4px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top: 4px solid #4f46e5; width: 32px; height: 32px; animation: spin 1s linear infinite; margin: 0 auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .sortable-header { cursor: pointer; }
         .sortable-header:hover { color: #f1f5f9; }
-        .pagination-btn { background-color: #334155; border: 1px solid #475569; color: #e2e8f0; padding: 0.5rem 1rem; border-radius: 0.375rem; }
+        
+        .pagination-btn { 
+            background-color: rgba(51, 65, 85, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e2e8f0; 
+            padding: 0.5rem 1rem; 
+            border-radius: 0.375rem; 
+        }
         .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .pagination-btn.active { background-color: #4f46e5; }
-
+        .pagination-btn.active { background-color: #4f46e5; border-color: #4f46e5; }
+        
         /* Export Specific Styles */
         .export-render .card-value { font-size: 1.5rem !important; overflow-wrap: break-word; }
         .export-render .card { page-break-inside: avoid; }
         .export-render * { -webkit-hyphens: auto; -ms-hyphens: auto; hyphens: auto; }
-
+        
         /* Custom multiselect */
-        .multiselect-container { max-height: 200px; overflow-y: auto; }
+        .multiselect-container { 
+            max-height: 200px; 
+            overflow-y: auto; 
+            background-color: #1e293b; /* Fundo sólido para o dropdown */
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.375rem;
+        }
         .multiselect-container label { display: flex; align-items: center; padding: 0.5rem; cursor: pointer; border-radius: 0.25rem; }
         .multiselect-container label:hover { background-color: #334155; }
+        
         .custom-checkbox { appearance: none; -webkit-appearance: none; height: 1.25rem; width: 1.25rem; background-color: #475569; border-radius: 0.25rem; cursor: pointer; display: inline-block; position: relative; flex-shrink: 0; }
         .custom-checkbox:checked { background-color: #4f46e5; }
         .custom-checkbox:checked::after { content: '\f00c'; font-family: 'Font Awesome 6 Free'; font-weight: 900; color: white; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 0.8rem; }
-
+        
         /* Modal */
-        .modal { background-color: rgba(15, 23, 42, 0.8); backdrop-filter: blur(4px); }
-        .modal-content { background-color: #1e293b; max-height: 90vh; }
+        .modal { 
+            background-color: rgba(15, 23, 42, 0.5); 
+            backdrop-filter: blur(8px); 
+        }
+        .modal-content { 
+            background-color: rgba(30, 41, 59, 0.85); 
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            max-height: 90vh; 
+        }
         .modal-tab { padding: 0.75rem 1rem; cursor: pointer; border-bottom: 2px solid transparent; }
         .modal-tab.active { color: #4f46e5; border-color: #4f46e5; }
         .modal-tab-content { display: none; }
         .modal-tab-content.active { display: block; }
+        
+        /* Botão Secundário (Glass) */
+        .btn-secondary {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #f1f5f9;
+            font-weight: 500; /* medium */
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem; /* rounded-md */
+            transition: background-color 0.2s;
+            font-size: 0.875rem; /* text-sm */
+            line-height: 1.25rem;
+        }
+        .btn-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        .btn-secondary i {
+            margin-right: 0.25rem; /* mr-1 */
+        }
 
         /* SortableJS */
         .column-item { background-color: #334155; padding: 0.75rem; border-radius: 0.375rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.75rem; }
         .drag-handle { cursor: move; color: #94a3b8; }
         .sortable-ghost { background-color: #4f46e5; opacity: 0.5; }
-
+        
         /* Switch Toggle */
         .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
         .switch input { opacity: 0; width: 0; height: 0; }
@@ -69,7 +194,7 @@
         .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: #4f46e5; }
         input:checked + .slider:before { transform: translateX(22px); }
-
+        
         /* Cores Variação */
         .delta-positive { color: #22c55e; /* green-500 */ }
         .delta-negative { color: #ef4444; /* red-500 */ }
@@ -79,7 +204,7 @@
 </head>
 <body class="p-4 sm:p-6 lg:p-8 pb-20">
     <!-- Overlay de Loading -->
-    <div id="loading-overlay" class="fixed inset-0 bg-slate-900 bg-opacity-75 z-[60] flex items-center justify-center hidden">
+    <div id="loading-overlay" class="fixed inset-0 bg-slate-900 bg-opacity-75 z-[60] flex items-center justify-center hidden" style="backdrop-filter: blur(8px);">
         <div class="text-center"><div class="spinner"></div><p class="mt-4 text-white">Gerando...</p></div>
     </div>
 
@@ -97,14 +222,12 @@
                 <h2 class="text-xl font-bold text-white">Personalizar Visão de Dados</h2>
                 <button id="view-modal-close-btn" class="text-slate-400 hover:text-white text-3xl leading-none">&times;</button>
             </div>
-
             <!-- Abas -->
             <div class="flex border-b border-slate-700 px-4">
                 <button class="modal-tab active" data-tab="tab-display">Exibir/Ocultar</button>
                 <button class="modal-tab" data-tab="tab-add">Adicionar Colunas</button>
                 <button class="modal-tab" data-tab="tab-presets">Predefinições</button>
             </div>
-
             <!-- Conteúdo das Abas -->
             <div class="p-6 overflow-y-auto">
                 <!-- Aba 1: Exibir/Ocultar -->
@@ -114,7 +237,6 @@
                         <!-- Itens da coluna serão injetados aqui -->
                     </div>
                 </div>
-
                 <!-- Aba 2: Adicionar Colunas -->
                 <div id="tab-add" class="modal-tab-content">
                     <!-- Coluna Calculada -->
@@ -142,7 +264,6 @@
                             <button id="calc-col-add-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Adicionar Coluna</button>
                         </div>
                     </div>
-
                     <!-- Colunas Ocultas do CSV -->
                     <h3 class="font-semibold text-lg mt-6 mb-3">Colunas Disponíveis no CSV</h3>
                     <div id="modal-hidden-csv-cols" class="max-h-[20vh] overflow-y-auto p-4 bg-slate-800 rounded-lg">
@@ -150,7 +271,6 @@
                         <p class="text-slate-400">Nenhuma coluna oculta encontrada.</p>
                     </div>
                 </div>
-
                 <!-- Aba 3: Predefinições -->
                 <div id="tab-presets" class="modal-tab-content">
                     <h3 class="font-semibold text-lg mb-3">Salvar Visão Atual</h3>
@@ -158,7 +278,6 @@
                         <input type="text" id="preset-save-name" placeholder="Nome da visão (Ex: Performance)" class="form-input flex-grow">
                         <button id="preset-save-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors flex-shrink-0">Salvar</button>
                     </div>
-
                     <h3 class="font-semibold text-lg mt-6 mb-3">Carregar Visão</h3>
                     <div id="preset-list" class="max-h-[30vh] overflow-y-auto space-y-2">
                         <!-- Lista de presets salvos -->
@@ -166,12 +285,11 @@
                     </div>
                 </div>
             </div>
-
             <!-- Rodapé do Modal -->
             <div class="flex justify-between items-center p-4 border-t border-slate-700 bg-slate-800/50 rounded-b-lg">
                 <button id="view-modal-reset-btn" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Resetar Padrão</button>
                 <div>
-                    <button id="view-modal-cancel-btn" class="bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded-lg transition-colors mr-2">Cancelar</button>
+                    <button id="view-modal-cancel-btn" class="btn-secondary mr-2"><i class="fas fa-times"></i>Cancelar</button>
                     <button id="view-modal-apply-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Aplicar</button>
                 </div>
             </div>
@@ -180,10 +298,12 @@
 
     <!-- Conteúdo Principal -->
     <div class="container mx-auto">
-        <header class="flex flex-col sm:flex-row justify-between items-center mb-8">
+        
+        <!-- Header com estilo Glassmorphism -->
+        <header class="header-card flex flex-col sm:flex-row justify-between items-center mb-8 p-6">
             <div class="flex items-center gap-4">
                 <div class="bg-indigo-600 p-3 rounded-lg"><i class="fas fa-chart-pie fa-2x text-white"></i></div>
-                <div><h1 class="text-2xl font-bold text-white">Analise Planilha</h1><p class="text-slate-400">Seus dados de campanha, analisados.</p></div>
+                <div><h1 class="text-2xl font-bold text-white">Analise Planilha</h1><p class="text-slate-300">Seus dados de campanha, analisados.</p></div>
             </div>
             <div class="flex items-center gap-4 mt-4 sm:mt-0">
                 <div id="export-buttons" class="flex items-center gap-4 hidden">
@@ -197,7 +317,7 @@
         </header>
 
         <div id="upload-section" class="mb-8">
-            <div id="file-drop-zone"><i class="fas fa-file-csv fa-3x text-slate-500 mb-4"></i><p class="text-slate-400" id="drop-zone-text">Arraste e solte seu arquivo CSV aqui, ou clique para selecionar.</p><p id="file-name" class="text-indigo-400 mt-2"></p></div>
+            <div id="file-drop-zone"><i class="fas fa-file-csv fa-3x text-slate-400 mb-4"></i><p class="text-slate-300" id="drop-zone-text">Arraste e solte seu arquivo CSV aqui, ou clique para selecionar.</p><p id="file-name" class="text-indigo-400 mt-2"></p></div>
         </div>
 
         <div id="dashboard-content" class="hidden">
@@ -206,8 +326,8 @@
                 <div id="filters-section" class="card mb-8">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
                         <h2 class="font-bold text-lg flex-shrink-0">Filtros Dinâmicos</h2>
-                        <button id="open-view-modal-btn" class="bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded-lg transition-colors w-full sm:w-auto">
-                            <i class="fas fa-cog mr-2"></i>Personalizar Visão
+                        <button id="open-view-modal-btn" class="btn-secondary w-full sm:w-auto">
+                            <i class="fas fa-cog"></i>Personalizar Visão
                         </button>
                     </div>
                     <div id="dynamic-filters-container" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
@@ -220,8 +340,8 @@
                         <div id="date-filter-container-A" class="flex flex-col sm:flex-row gap-4 items-end">
                             <!-- Período A -->
                             <div class="w-full flex flex-col gap-1">
-                                <label class="text-sm font-medium">Período A</label>
-                                <div class="flex items-center gap-2 bg-slate-700/50 p-2 rounded-lg">
+                                <label class="text-sm font-medium text-slate-300">Período A</label>
+                                <div class="flex items-center gap-2 bg-slate-900/50 p-2 rounded-lg">
                                     <span class="text-slate-400">De:</span><input type="date" id="filter-start-date-A" class="filter-input bg-transparent border-0 p-0">
                                     <span class="text-slate-400">Até:</span><input type="date" id="filter-end-date-A" class="filter-input bg-transparent border-0 p-0">
                                 </div>
@@ -229,13 +349,13 @@
                             <!-- Switch Comparar & Ocultar B -->
                             <div class="flex gap-4 items-end flex-shrink-0 w-full sm:w-auto">
                                 <div class="flex flex-col gap-1 items-center sm:items-start">
-                                    <label for="compare-toggle-checkbox" class="text-sm font-medium">Comparar</label>
+                                    <label for="compare-toggle-checkbox" class="text-sm font-medium text-slate-300">Comparar</label>
                                     <label class="switch">
                                         <input type="checkbox" id="compare-toggle-checkbox">
                                         <span class="slider"></span>
                                     </label>
                                 </div>
-                                <button id="toggle-comparison-details-btn" class="hidden bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm flex-grow sm:flex-grow-0">
+                                <button id="toggle-comparison-details-btn" class="hidden btn-secondary flex-grow sm:flex-grow-0">
                                     <i class="fas fa-eye-slash mr-1"></i> Ocultar B
                                 </button>
                             </div>
@@ -246,8 +366,8 @@
                         <!-- Período B (Comparação) -->
                         <div id="date-filter-container-B" class="hidden flex-col sm:flex-row gap-4 items-end mt-4">
                             <div class="w-full flex flex-col gap-1">
-                                <label class="text-sm font-medium">Período B (Comparação)</label>
-                                <div class="flex items-center gap-2 bg-slate-700/50 p-2 rounded-lg">
+                                <label class="text-sm font-medium text-slate-300">Período B (Comparação)</label>
+                                <div class="flex items-center gap-2 bg-slate-900/50 p-2 rounded-lg">
                                     <span class="text-slate-400">De:</span><input type="date" id="filter-start-date-B" class="filter-input bg-transparent border-0 p-0">
                                     <span class="text-slate-400">Até:</span><input type="date" id="filter-end-date-B" class="filter-input bg-transparent border-0 p-0">
                                 </div>
@@ -255,25 +375,41 @@
                         </div>
                     </div>
                 </div>
-
+                
                 <!-- Cards de KPI (Dinâmicos) -->
                 <div id="kpi-card-container" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6 mb-8">
                     <!-- KPIs serão injetados aqui -->
                 </div>
 
                 <!-- AI Insights -->
-                <div class="card mb-8"><h2 class="font-bold text-lg mb-2">Insights com IA</h2><div id="ai-insights-content" class="text-slate-300 whitespace-pre-wrap">Clique no botão para gerar uma análise.</div><div id="ai-loading" class="hidden my-4"><div class="spinner"></div></div><button id="generate-ai-insights" class="mt-4 bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded-lg transition-colors w-full sm:w-auto self-start"><i class="fas fa-wand-magic-sparkles mr-2"></i>Gerar Análise</button></div>
+                <div class="card mb-8">
+                    <h2 class="font-bold text-lg mb-2">Insights com IA</h2>
+                    <div id="ai-insights-content" class="text-slate-300 whitespace-pre-wrap">Clique no botão para gerar uma análise.</div>
+                    <div id="ai-loading" class="hidden my-4"><div class="spinner"></div></div>
+                    <button id="generate-ai-insights" class="mt-4 btn-secondary w-full sm:w-auto self-start">
+                        <i class="fas fa-wand-magic-sparkles"></i>Gerar Análise
+                    </button>
+                </div>
 
                 <!-- Gráficos -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                     <div class="card" id="timeline-card">
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
                             <h2 id="timeline-chart-title" class="font-bold text-lg min-w-0 flex-shrink mr-2">Evolução Temporal</h2>
+                            
+                            <!-- NOVO: Seletor de Métricas do Gráfico de Linha -->
+                            <div class="relative flex-grow sm:flex-grow-0">
+                                <button id="timeline-metric-btn" class="filter-select text-left w-full sm:w-auto text-sm">Selecionar métricas...</button>
+                                <div id="timeline-metric-dropdown" class="hidden absolute right-0 bg-slate-700 border border-slate-600 rounded-md mt-1 z-10 p-2 multiselect-container w-full sm:w-64">
+                                    <!-- Métricas serão injetadas aqui pelo JS -->
+                                </div>
+                            </div>
+                            
                             <select id="timeline-chart-type" class="chart-type-selector w-full sm:w-auto"><option value="line">Linha</option><option value="bar">Barra</option></select>
                         </div>
                         <div class="chart-container"><canvas id="timeline-chart"></canvas></div>
                     </div>
-
+                    
                     <div class="card">
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
                              <h2 id="chart1-title" class="font-bold text-lg min-w-0 flex-shrink mr-2">Análise por Categoria 1</h2>
@@ -282,7 +418,7 @@
                                  <span class="text-slate-400 text-sm">por</span>
                                  <select id="chart1-category" class="category-selector"></select>
                                  <select id="chart1-type" class="chart-type-selector"><option value="bar">Barra</option><option value="pie">Pizza</option></select>
-                                 <button id="chart1-labels-toggle" class="p-2 bg-slate-700 rounded-md hover:bg-slate-600 transition-colors hidden" title="Mostrar/Ocultar Rótulos"><i class="fas fa-tags"></i></button>
+                                 <button id="chart1-labels-toggle" class="p-2 bg-slate-700/80 rounded-md hover:bg-slate-600/80 transition-colors hidden" title="Mostrar/Ocultar Rótulos"><i class="fas fa-tags"></i></button>
                              </div>
                         </div>
                         <div class="chart-container"><canvas id="chart1"></canvas></div>
@@ -295,13 +431,13 @@
                                  <select id="chart2-metric" class="metric-selector"></select>
                                  <span class="text-slate-400 text-sm">por</span>
                                  <select id="chart2-category" class="category-selector"></select>
-                                 <select id="chart2-type" class="chart-type-selector"><option value="bar">Barra</option><option value="doughnut">Rosca</option></select>
-                                 <button id="chart2-labels-toggle" class="p-2 bg-slate-700 rounded-md hover:bg-slate-600 transition-colors hidden" title="Mostrar/Ocultar Rótulos"><i class="fas fa-tags"></i></button>
+                                 <select id="chart2-type" class="chart-type-selector"><option value="bar">Barra</ooption><option value="doughnut">Rosca</option></select>
+                                 <button id="chart2-labels-toggle" class="p-2 bg-slate-700/80 rounded-md hover:bg-slate-600/80 transition-colors hidden" title="Mostrar/Ocultar Rótulos"><i class="fas fa-tags"></i></button>
                              </div>
                         </div>
                         <div class="chart-container"><canvas id="chart2"></canvas></div>
                     </div>
-
+                    
                     <div class="card">
                          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
                              <h2 id="chart3-title" class="font-bold text-lg min-w-0 flex-shrink mr-2">Análise por Categoria 3</h2>
@@ -309,8 +445,8 @@
                                  <select id="chart3-metric" class="metric-selector"></select>
                                  <span class="text-slate-400 text-sm">por</span>
                                  <select id="chart3-category" class="category-selector"></select>
-                                 <select id="chart3-type" class="chart-type-selector"><option value="bar">Barra</Doutor Fran>Linha</option></select>
-                                 <button id="chart3-labels-toggle" class="p-2 bg-slate-700 rounded-md hover:bg-slate-600 transition-colors hidden" title="Mostrar/Ocultar Rótulos"><i class="fas fa-tags"></i></button>
+                                 <select id="chart3-type" class="chart-type-selector"><option value="bar">Barra</option><option value="line">Linha</option></select>
+                                 <button id="chart3-labels-toggle" class="p-2 bg-slate-700/80 rounded-md hover:bg-slate-600/80 transition-colors hidden" title="Mostrar/Ocultar Rótulos"><i class="fas fa-tags"></i></button>
                              </div>
                         </div>
                         <div class="chart-container"><canvas id="chart3"></canvas></div>
@@ -318,13 +454,26 @@
                 </div>
 
                 <!-- Tabela -->
-                <div class="card"><div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4"><h2 class="font-bold text-lg">Ranking Detalhado</h2><input type="search" id="campaign-search" placeholder="Pesquisar..." class="search-input md:w-1/3"></div><div class="overflow-x-auto"><table class="w-full text-left"><thead id="campaign-ranking-head"></thead><tbody id="campaign-ranking-body"></tbody></table></div><div id="pagination-controls" class="mt-4 flex justify-center items-center gap-2"></div></div>
+                <div class="card">
+                    <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
+                        <h2 class="font-bold text-lg">Ranking Detalhado</h2>
+                        <input type="search" id="campaign-search" placeholder="Pesquisar..." class="search-input md:w-1/3">
+                    </div>
+                    <div class="overflow-x-auto">
+                        <!-- Estilo de Fundo Sólido para Tabela para melhor legibilidade -->
+                        <table class="w-full text-left" style="background-color: #1e293b;">
+                            <thead id="campaign-ranking-head"></thead>
+                            <tbody id="campaign-ranking-body"></tbody>
+                        </table>
+                    </div>
+                    <div id="pagination-controls" class="mt-4 flex justify-center items-center gap-2"></div>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Rodapé -->
-    <div class="fixed bottom-0 left-0 right-0 z-50 w-full text-center py-4 bg-gray-800 shadow-lg text-white">
+    <div class="fixed bottom-0 left-0 right-0 z-50 w-full text-center py-4 footer-glass shadow-lg text-white">
         <p class="text-sm flex justify-center items-center gap-4">
             Desenvolvido por Giovanni Fuentes Giannetti:
             <!-- Instagram -->
@@ -333,11 +482,16 @@
             <a href="https://linkedin.com/in/giovanni-fg" target="_blank" class="text-blue-400 hover:text-blue-300 flex items-center gap-1"> <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-5 h-5"> <path d="M4.98 3.5C4.98 5 3.9 6 2.5 6S0 5 0 3.5 1.12 1 2.5 1s2.48 1 2.48 2.5zM.5 8h4V24h-4V8zM8.5 8h3.8v2.2h.1c.5-.9 1.8-1.9 3.7-1.9 3.9 0 4.6 2.5 4.6 5.7V24h-4v-7.8c0-1.9 0-4.4-2.7-4.4-2.7 0-3.1 2.1-3.1 4.2V24h-4V8z"/> </svg> giovanni-fg </a>
         </p>
     </div>
+
 <script>
     const { jsPDF } = window.jspdf;
     Chart.register(ChartDataLabels);
     Chart.defaults.plugins.datalabels.display = false;
-    Chart.defaults.color = '#94a3b8'; Chart.defaults.borderColor = '#334155'; Chart.defaults.plugins.legend.position = 'bottom'; Chart.defaults.maintainAspectRatio = false;
+    Chart.defaults.color = '#94a3b8'; 
+    Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)'; // Borda mais clara
+    Chart.defaults.plugins.legend.position = 'bottom';
+    Chart.defaults.plugins.legend.labels.color = '#e2e8f0'; // Texto da legenda claro
+    Chart.defaults.maintainAspectRatio = false;
 
     let originalData = [], filteredData = [], comparisonData = [], charts = {};
     const GEMINI_API_KEY = 'AIzaSyA0LecQ2UW0nZvLTlnp-Utp4NHxVeIfvX8'; // Consider securely managing API keys
@@ -365,6 +519,9 @@
         filterStartDateB: document.getElementById('filter-start-date-B'),
         filterEndDateB: document.getElementById('filter-end-date-B'),
         timelineChartTitle: document.getElementById('timeline-chart-title'),
+        // NOVO: Seletor de Métricas do Gráfico de Linha
+        timelineMetricBtn: document.getElementById('timeline-metric-btn'),
+        timelineMetricDropdown: document.getElementById('timeline-metric-dropdown'),
         // Modal
         viewModal: document.getElementById('view-modal'),
         openViewModalBtn: document.getElementById('open-view-modal-btn'),
@@ -462,7 +619,6 @@
         return formatValue(value, metricDef.type);
     }
 
-
     const safePercentChange = (a, b) => {
         if (a === null || b === null || typeof a !== 'number' || typeof b !== 'number') return null;
         if (a === 0) return (b > 0) ? Infinity : 0;
@@ -473,9 +629,9 @@
         let deltaPctFormatted = '—';
         let deltaColorClass = 'delta-neutral';
         let deltaIconClass = 'fa-minus';
-        if (deltaPct === Infinity) {
-             deltaPctFormatted = '(Novo)';
-             deltaColorClass = 'delta-positive';
+        if (deltaPct === Infinity) { 
+             deltaPctFormatted = '(Novo)'; 
+             deltaColorClass = 'delta-positive'; 
              deltaIconClass = 'fa-arrow-up';
         } else if (deltaPct !== null && isFinite(deltaPct)) {
             deltaPctFormatted = `(${deltaPct > 0 ? '+' : ''}${formatValue(deltaPct, 'percent')})`;
@@ -487,7 +643,6 @@
                     <i class="fas ${deltaIconClass} mx-1 text-xs"></i>${deltaPctFormatted}
                 </span>`;
     }
-
 
     function getAggregationType(key) {
         const lowerKey = key.toLowerCase();
@@ -541,7 +696,6 @@
         return totals.sum; // Default to sum
     }
 
-
     const parseValue = (v) => { if (typeof v !== 'string' || v === '') return 0; const c = v.replace('R$', '').trim().replace(/\./g, '').replace(',', '.'); return isNaN(parseFloat(c)) ? 0 : parseFloat(c); };
     const parseInteger = (v) => { if (typeof v === 'number') return v; if (typeof v !== 'string' || v === '') return 0; const c = v.replace(/[^\d]/g, ''); const n = parseInt(c, 10); return isNaN(n) ? 0 : n; };
 
@@ -577,7 +731,6 @@
     }
 
     // --- Handlers de Arquivo e Processamento de Dados ---
-
     elements.fileUpload.addEventListener('change', (e) => handleFile(e.target.files[0]));
     elements.dropZone.addEventListener('click', () => elements.fileUpload.click());
     elements.dropZone.addEventListener('dragover', (e) => { e.preventDefault(); elements.dropZone.classList.add('dragover'); });
@@ -588,13 +741,13 @@
         if (!file || file.type !== 'text/csv') { console.error('Tipo de arquivo inválido.'); elements.dropZoneText.textContent = 'Erro: Tipo de arquivo inválido. Use .csv'; return; }
         elements.fileName.textContent = file.name; elements.dropZoneText.textContent = 'Processando...';
         Papa.parse(file, { header: true, skipEmptyLines: true, complete: (r) => {
-            if (!r.data || r.data.length === 0 || !r.meta.fields || r.meta.fields.length === 0) {
-                 elements.dropZoneText.textContent = 'Erro: Arquivo CSV vazio, mal formatado ou sem cabeçalho.';
+            if (!r.data || r.data.length === 0 || !r.meta.fields || r.meta.fields.length === 0) { 
+                 elements.dropZoneText.textContent = 'Erro: Arquivo CSV vazio, mal formatado ou sem cabeçalho.'; 
                  return;
             }
             // Simple header validation (check for empty headers)
-            if (r.meta.fields.some(h => !h || h.trim() === '')) {
-                 elements.dropZoneText.textContent = 'Erro: O cabeçalho do CSV contém colunas sem nome.';
+            if (r.meta.fields.some(h => !h || h.trim() === '')) { 
+                 elements.dropZoneText.textContent = 'Erro: O cabeçalho do CSV contém colunas sem nome.'; 
                  return;
             }
             processData(r.data, r.meta.fields);
@@ -602,11 +755,10 @@
         }, error: (err) => { console.error('Erro no PapaParse:', err); elements.dropZoneText.textContent = 'Erro ao ler o arquivo CSV.'; }});
     }
 
-
     function processData(data, headers) {
         const validHeaders = headers.filter(h => h && h.trim() !== ''); // Filter out empty headers
-        if (validHeaders.length === 0) {
-             elements.dropZoneText.textContent = 'Erro: Nenhuma coluna válida encontrada no cabeçalho do CSV.';
+        if (validHeaders.length === 0) { 
+             elements.dropZoneText.textContent = 'Erro: Nenhuma coluna válida encontrada no cabeçalho do CSV.'; 
              return;
         }
 
@@ -655,7 +807,7 @@
         const lastViewJson = localStorage.getItem(LAST_VIEW_LS_KEY);
         let viewToApply;
         if (lastViewJson) { try { viewToApply = JSON.parse(lastViewJson); } catch (e) { console.error("Error loading last view", e); } }
-
+        
         // ******** CORRECTED INITIAL LOAD LOGIC ********
         if (viewToApply) {
             // Apply saved view, which internally calls reconcile, reprocess, save, updateGraphSelectors, populateDynamicUI
@@ -669,12 +821,12 @@
             localStorage.setItem(LAST_VIEW_LS_KEY, JSON.stringify(activeColumnDefinitions));
             reprocessDataWithView(activeColumnDefinitions); // Process calculated columns for default view
             updateGraphSelectors(); // Needed for default view
+            updateTimelineMetricSelector(); // NOVO: Popular seletor de métrica da timeline
             populateDynamicUI(); // Populate filters based on default
             applyFilters(); // Apply filters and render dashboard
         }
         // ***********************************************
     }
-
 
     function generateBaseColumnDefinitions(headers, sampleRow) {
         baseColumnDefinitions = [];
@@ -725,13 +877,12 @@
         });
     }
 
-
     function populateDynamicUI() {
         elements.dynamicFiltersContainer.innerHTML = ''; // Clear before recreating
         const filterableCols = activeColumnDefinitions.filter(c => c.visible && c.isFilterable && c.type === 'string')
             .sort((a,b) => (a.order || 999) - (b.order || 999));
 
-        if(filterableCols.length === 0) {
+        if(filterableCols.length === 0) { 
              elements.dynamicFiltersContainer.innerHTML = '<p class="text-slate-400 md:col-span-4">Nenhum filtro ativo. Personalize a visão para adicionar filtros.</p>';
         } else {
             filterableCols.forEach(col => {
@@ -756,18 +907,19 @@
                         button.className = 'filter-select text-left';
                         dropdown = document.createElement('div');
                         dropdown.id = 'campaign-multiselect-dropdown';
-                        dropdown.className = 'hidden absolute top-full left-0 w-full bg-slate-600 border border-slate-700 rounded-md mt-1 z-10 p-2 multiselect-container';
+                        dropdown.className = 'hidden absolute top-full left-0 w-full border border-slate-700 rounded-md mt-1 z-10 p-2 multiselect-container'; // Estilo aplicado
 
                         const uniqueCampaigns = [...new Set(originalData.map(item => item.campaignName))].sort();
                         uniqueCampaigns.forEach(campaign => {
-                            const item = document.createElement('label'); item.className = 'flex items-center';
+                            const item = document.createElement('label'); 
+                            item.className = 'flex items-center p-2 rounded-md hover:bg-slate-600'; // Estilo aplicado
                             // State is not preserved here initially, will be updated below
-                            item.innerHTML = `<input type="checkbox" class="campaign-checkbox custom-checkbox" value="${campaign}"><span class="ml-2">${campaign}</span>`;
+                            item.innerHTML = `<input type="checkbox" class="campaign-checkbox custom-checkbox" value="${campaign}"><span class="ml-2 text-white">${campaign}</span>`;
                             dropdown.appendChild(item);
-                        });
-                         container.appendChild(button);
+                        }); 
+                         container.appendChild(button); 
                          container.appendChild(dropdown);
-
+                         
                          // Add listeners only once
                          button.addEventListener('click', () => dropdown.classList.toggle('hidden'));
                          document.addEventListener('click', (e) => { if (!container.contains(e.target)) dropdown.classList.add('hidden'); });
@@ -776,12 +928,12 @@
                              button.textContent = count > 0 ? `${count} selecionada(s)` : 'Selecionar...';
                              applyFilters(); // Apply on change
                          });
-                    } else {
+                    } else { 
                          // If elements exist, just append them and update count
-                         container.appendChild(button);
-                         container.appendChild(dropdown);
+                         container.appendChild(button); 
+                         container.appendChild(dropdown); 
                          selectedCount = dropdown.querySelectorAll('.campaign-checkbox:checked').length;
-                    }
+                    } 
                      button.textContent = selectedCount > 0 ? `${selectedCount} selecionada(s)` : 'Selecionar...';
 
                 } else {
@@ -792,24 +944,25 @@
                     // Preserve previous value if element exists
                     const existingSelect = document.querySelector(`.dynamic-filter[data-column="${colName}"]`);
                     const currentValue = existingSelect ? existingSelect.value : "";
-
+                    
                     select.innerHTML = `<option value="">Todos</option>`;
                     // Re-read unique values from originalData each time
                     const uniqueValues = [...new Set(originalData.map(item => item[colName]))].filter(v => v !== null && typeof v !== 'undefined').sort(); // Filter out null/undefined
                     uniqueValues.forEach(v => v && select.add(new Option(v, v)));
                     select.value = currentValue; // Restore previous value
-
+                    
                     container.appendChild(select);
                     // Add listener if it doesn't exist yet (important for redraws)
                     if (!existingSelect) {
                         select.addEventListener('change', applyFilters);
                     }
-                }
+                } 
                  elements.dynamicFiltersContainer.appendChild(container); // Append the container for the filter
             });
         }
-
+        
         updateGraphSelectors();
+        updateTimelineMetricSelector(); // NOVO: Atualiza o seletor da timeline
         document.getElementById('date-filter-section').style.display = has.date ? 'block' : 'none';
         document.getElementById('timeline-card').style.display = has.date ? 'flex' : 'none';
         if (has.date && !elements.filterStartDateA.value) { // Set initial date range only if not already set
@@ -823,6 +976,39 @@
         }
     }
 
+    // NOVO: Função para popular o seletor de métricas da timeline
+    function updateTimelineMetricSelector() {
+        const container = elements.timelineMetricDropdown;
+        const button = elements.timelineMetricBtn;
+        
+        const numericMetrics = activeColumnDefinitions.filter(c => c.visible && ['number', 'currency', 'percent'].includes(c.type)).sort((a,b) => (a.order || 999) - (b.order || 999));
+        
+        if (numericMetrics.length === 0) {
+            container.innerHTML = '<span class="text-slate-400 p-2">Nenhuma métrica</span>';
+            button.textContent = 'Nenhuma métrica';
+            button.disabled = true;
+            return;
+        }
+        
+        button.disabled = false;
+        // Salva as métricas checadas antes de limpar
+        const checkedMetrics = Array.from(container.querySelectorAll('.timeline-metric-checkbox:checked')).map(cb => cb.value);
+        container.innerHTML = ''; // Limpa
+        let newCheckedCount = 0;
+
+        numericMetrics.forEach((metric, index) => {
+            // Checa se estava checado antes, OU se é o primeiro (default), OU se nenhuma estava checada (caso de reset)
+            const isChecked = checkedMetrics.includes(metric.key) || (checkedMetrics.length === 0 && index === 0);
+            if (isChecked) newCheckedCount++;
+
+            const item = document.createElement('label'); 
+            item.className = 'flex items-center p-2 rounded-md hover:bg-slate-600 cursor-pointer'; // Estilo
+            item.innerHTML = `<input type="checkbox" class="timeline-metric-checkbox custom-checkbox" value="${metric.key}" ${isChecked ? 'checked' : ''}><span class="ml-2 text-white">${metric.label}</span>`;
+            container.appendChild(item);
+        });
+
+        button.textContent = newCheckedCount > 0 ? `${newCheckedCount} métrica(s)` : 'Selecionar métricas...';
+    }
 
     function addListeners() {
         // dynamicFiltersContainer listener is added dynamically in populateDynamicUI
@@ -852,14 +1038,29 @@
                 if (dateFilteredData.length > 0) {
                     const dates = dateFilteredData.map(d => d.date); const minDate = new Date(Math.min(...dates)), maxDate = new Date(Math.max(...dates));
                     elements.filterStartDateA.value = minDate.toISOString().split('T')[0]; elements.filterEndDateA.value = maxDate.toISOString().split('T')[0];
-                } else { // Handle case with no valid dates
-                     elements.filterStartDateA.value = '';
+                } else { // Handle case with no valid dates 
+                     elements.filterStartDateA.value = ''; 
                      elements.filterEndDateA.value = '';
                 }
             }
             applyFilters();
         });
         document.querySelectorAll('.category-selector, .metric-selector, .chart-type-selector').forEach(sel => sel.addEventListener('change', applyFilters));
+        
+        // NOVO: Listeners para o seletor de métricas da timeline
+        elements.timelineMetricBtn.addEventListener('click', () => elements.timelineMetricDropdown.classList.toggle('hidden'));
+        document.addEventListener('click', (e) => {
+            if (elements.timelineMetricBtn && !elements.timelineMetricBtn.contains(e.target) && elements.timelineMetricDropdown && !elements.timelineMetricDropdown.contains(e.target)) {
+                elements.timelineMetricDropdown.classList.add('hidden');
+            }
+        });
+        elements.timelineMetricDropdown.addEventListener('change', () => {
+            const count = elements.timelineMetricDropdown.querySelectorAll('.timeline-metric-checkbox:checked').length;
+            elements.timelineMetricBtn.textContent = count > 0 ? `${count} métrica(s)` : 'Selecionar métricas...';
+            applyFilters(); // Re-aplica filtros para redesenhar o gráfico
+        });
+
+
         elements.downloadPdfBtn.addEventListener('click', downloadPDF); elements.downloadImageBtn.addEventListener('click', downloadImage); elements.downloadCsvBtn.addEventListener('click', downloadAnalysisCSV);
         elements.aiBtn.addEventListener('click', generateInsights);
         elements.campaignSearch.addEventListener('input', (e) => { tableState.searchTerm = e.target.value; tableState.currentPage = 1; updateTables(); });
@@ -877,9 +1078,8 @@
         elements.viewModalApplyBtn.addEventListener('click', applyModalView); elements.viewModalResetBtn.addEventListener('click', resetViewToDefault);
         elements.modalColumnSearch.addEventListener('input', renderModalColumnList); elements.calcColAddBtn.addEventListener('click', addCalculatedColumn); elements.presetSaveBtn.addEventListener('click', savePreset);
     }
-
+    
     // --- Lógica de Filtro e Atualização ---
-
     function applyFilters() {
         // Prevent applying filters if originalData is not ready
         if (!originalData || originalData.length === 0) return;
@@ -910,7 +1110,6 @@
         } else comparisonData = [];
         updateDashboard();
     }
-
 
     function updateDashboard() {
         // Only populate filters if needed (view changed or initial load)
@@ -953,18 +1152,17 @@
                 const deltaType = col.type === 'percent' ? 'number' : col.type; const deltaAbsFormatted = formatValue(deltaAbs, deltaType); const deltaPctFormattedHTML = formatDeltaPercent(deltaPct);
                 
                 elements.kpiCardContainer.innerHTML += `<div class="card"><p class="card-title">${col.label} (A)</p><p class="card-value">${formatValue(valA, col.type)}</p></div>`;
-                if (showComparisonDetails) elements.kpiCardContainer.innerHTML += `<div class="card"><p class="card-title">${col.label} (B)</p><p class="card-value">${formatValue(valB, col.type)}</p></div>`;
+                if (showComparisonDetails) elements.kpiCardContainer.innerHTML += `<div class="card"><p class="card-title">${col.label} (B)</p><p class="card-value">${formatValue(valB, col.type)}</p></div>`; 
                  // Adjusted padding/size for delta card value
                 elements.kpiCardContainer.innerHTML += `<div class="card"><p class="card-title">Variação (${col.label})</p><p class="card-value text-lg md:text-xl flex items-center gap-2">${deltaAbsFormatted} ${deltaPctFormattedHTML}</p></div>`;
             });
         }
     }
 
-
     function updateTables() {
         const visibleMetrics = activeColumnDefinitions.filter(c => c.visible && ['number', 'currency', 'percent'].includes(c.type)).sort((a, b) => (a.order || 999) - (b.order || 999));
         const groupingColumn = activeColumnDefinitions.find(c => c.key === 'campaignName');
-        if (!groupingColumn || !groupingColumn.visible) {
+        if (!groupingColumn || !groupingColumn.visible) { 
              document.getElementById('campaign-ranking-head').innerHTML = ''; document.getElementById('campaign-ranking-body').innerHTML = '<tr><td class="p-4 text-slate-400">Tabela de Ranking oculta. Ative a coluna "Campanha" na Personalização de Visão.</td></tr>'; document.getElementById('pagination-controls').innerHTML = ''; return;
         }
         const head = document.getElementById('campaign-ranking-head');
@@ -1003,7 +1201,7 @@
         const startIndex = (tableState.currentPage - 1) * tableState.rowsPerPage; const paginatedData = processedData.slice(startIndex, startIndex + tableState.rowsPerPage);
         paginatedData.forEach(c => {
             const row = body.insertRow(); row.className = 'border-b border-slate-800 hover:bg-slate-700/50';
-            let rowHTML = `<td class="p-2 font-medium sticky left-0 bg-slate-700/50 z-10">${c.campaignName}</td>`; // Sticky cell
+            let rowHTML = `<td class="p-2 font-medium sticky left-0 bg-slate-800 z-10">${c.campaignName}</td>`; // Sticky cell (corrigido para bg-slate-800)
             if (!isComparisonActive || comparisonData.length === 0) {
                 visibleMetrics.forEach(col => rowHTML += `<td class="p-2">${formatValue(c[col.key], col.type)}</td>`);
             } else {
@@ -1018,7 +1216,6 @@
         }); renderPagination(processedData.length);
     }
 
-
     /**
      * [CORRIGIDO] Agrega dados por campanha, garantindo que as métricas de base
      * (spend, leads, etc.) sejam sempre somadas para calcular as taxas corretamente.
@@ -1029,9 +1226,9 @@
             if (!acc[name]) {
                 acc[name] = { campaignName: name, rowCount: 0, spend: 0, leads: 0, clicks: 0, impressions: 0 };
                 // Inicializa outras métricas visíveis
-                metrics.forEach(col => {
+                metrics.forEach(col => { 
                      if (!['spend', 'leads', 'clicks', 'impressions'].includes(col.key)) {
-                        acc[name][col.key] = 0;
+                        acc[name][col.key] = 0; 
                      }
                 });
             }
@@ -1076,7 +1273,6 @@
         return campaignData;
     }
 
-
     function renderPagination(totalRows) {
         const pageCount = Math.ceil(totalRows / tableState.rowsPerPage); elements.paginationControls.innerHTML = ''; if (pageCount <= 1) return;
         for (let i = 1; i <= pageCount; i++) {
@@ -1086,41 +1282,82 @@
     }
 
     function updateAllCharts() {
-        const visibleMetrics = activeColumnDefinitions.filter(c => c.visible && ['number', 'currency', 'percent'].includes(c.type));
+        // NOVO: Lógica do Gráfico de Linha (Timeline)
         if (has.date) {
-            const options = { scales: { x: { type: 'time', time: { unit: 'day', tooltipFormat: 'dd/MM/yy' } }, y: { position: 'left', title: { display: true, text: 'Valores (R$, #)'} }, y1: { position: 'right', grid: { drawOnChartArea: false }, display: visibleMetrics.some(c => c.type === 'percent'), title: { display: true, text: 'Valores (%)'} } }, plugins: { tooltip: { callbacks: { label: (context) => { const label = context.dataset.label.replace(/ \([AB]\)$/, ''); const col = activeColumnDefinitions.find(c => c.label === label); if (!col) return context.formattedValue; return `${context.dataset.label}: ${formatValue(context.raw, col.type)}`; } } } }, tension: 0.1, spanGaps: true };
+            // Pega as métricas selecionadas no novo dropdown
+            const selectedTimelineMetricsKeys = Array.from(document.querySelectorAll('.timeline-metric-checkbox:checked')).map(cb => cb.value);
+            let timelineMetrics = activeColumnDefinitions.filter(c => selectedTimelineMetricsKeys.includes(c.key));
+            
+            // Fallback: se nenhuma estiver selecionada, pega a primeira métrica visível
+            if (timelineMetrics.length === 0) {
+                 const firstMetric = activeColumnDefinitions.find(c => c.visible && ['number', 'currency', 'percent'].includes(c.type));
+                 if (firstMetric) timelineMetrics = [firstMetric];
+            }
+            
+            const y1Display = timelineMetrics.some(c => c.type === 'percent'); // Checa se eixo Y % é necessário
+
+            const options = { 
+                scales: { 
+                    x: { type: 'time', time: { unit: 'day', tooltipFormat: 'dd/MM/yy' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } }, 
+                    y: { position: 'left', title: { display: true, text: 'Valores (R$, #)'}, grid: { color: 'rgba(255, 255, 255, 0.1)' } }, 
+                    y1: { position: 'right', grid: { drawOnChartArea: false }, display: y1Display, title: { display: y1Display, text: 'Valores (%)'} } 
+                }, 
+                plugins: { 
+                    tooltip: { 
+                        callbacks: { 
+                            label: (context) => { 
+                                const label = context.dataset.label.replace(/ \([AB]\)$/, ''); 
+                                const col = activeColumnDefinitions.find(c => c.label === label); 
+                                if (!col) return context.formattedValue; 
+                                return `${context.dataset.label}: ${formatValue(context.raw, col.type)}`; 
+                            } 
+                        } 
+                    } 
+                }, 
+                tension: 0.1, 
+                spanGaps: true 
+            };
             
             // [CORRIGIDO] aggregateTimeSeriesData agora calcula taxas corretamente
-            const timeDataA = aggregateTimeSeriesData(filteredData, visibleMetrics);
+            const timeDataA = aggregateTimeSeriesData(filteredData, timelineMetrics); // Passa só as métricas selecionadas
             
             if (!isComparisonActive || comparisonData.length === 0 || !showComparisonDetails) {
                 elements.timelineChartTitle.textContent = 'Evolução Temporal (Período A)'; const sortedKeys = Object.keys(timeDataA).sort();
-                const timeDatasets = visibleMetrics.map((col, i) => ({ label: col.label, data: sortedKeys.map(k => timeDataA[k]?.[col.key]), backgroundColor: chartColors[i % chartColors.length], borderColor: chartColors[i % chartColors.length], yAxisID: col.type === 'percent' ? 'y1' : 'y' }));
+                // Usa timelineMetrics
+                const timeDatasets = timelineMetrics.map((col, i) => ({ label: col.label, data: sortedKeys.map(k => timeDataA[k]?.[col.key]), backgroundColor: chartColors[i % chartColors.length], borderColor: chartColors[i % chartColors.length], yAxisID: col.type === 'percent' ? 'y1' : 'y' }));
                 drawOrUpdateChart('timeline-chart', document.getElementById('timeline-chart-type').value, { labels: sortedKeys, datasets: timeDatasets }, options);
             } else {
                 elements.timelineChartTitle.textContent = 'Evolução Temporal (A vs B)'; 
-                const timeDataB = aggregateTimeSeriesData(comparisonData, visibleMetrics);
+                const timeDataB = aggregateTimeSeriesData(comparisonData, timelineMetrics); // Passa só as métricas selecionadas
                 const allKeys = [...new Set([...Object.keys(timeDataA), ...Object.keys(timeDataB)])].sort(); const timeDatasets = [];
-                visibleMetrics.forEach((col, i) => { const color = chartColors[i % chartColors.length];
+                // Usa timelineMetrics
+                timelineMetrics.forEach((col, i) => { const color = chartColors[i % chartColors.length];
                     timeDatasets.push({ label: `${col.label} (A)`, data: allKeys.map(k => timeDataA[k]?.[col.key] ?? null), borderColor: color, backgroundColor: color + '50', borderDash: [5, 5], yAxisID: col.type === 'percent' ? 'y1' : 'y', pointRadius: 2, pointHoverRadius: 4 });
                     timeDatasets.push({ label: `${col.label} (B)`, data: allKeys.map(k => timeDataB[k]?.[col.key] ?? null), borderColor: color, backgroundColor: color, yAxisID: col.type === 'percent' ? 'y1' : 'y', pointRadius: 2, pointHoverRadius: 4 });
                 }); document.getElementById('timeline-chart-type').value = 'line'; drawOrUpdateChart('timeline-chart', 'line', { labels: allKeys, datasets: timeDatasets }, options);
             }
         }
+
+        // Lógica para os outros 3 gráficos (categóricos)
         [1, 2, 3].forEach(i => {
             const categoryKey = document.getElementById(`chart${i}-category`).value; const categoryDef = activeColumnDefinitions.find(c => c.key === categoryKey);
             const typeSelector = document.getElementById(`chart${i}-type`); const type = typeSelector.value; const metricKey = document.getElementById(`chart${i}-metric`).value; const metricDef = activeColumnDefinitions.find(c => c.key === metricKey);
             const toggleBtn = document.getElementById(`chart${i}-labels-toggle`); const titleEl = document.getElementById(`chart${i}-title`);
             if (!categoryDef || !metricDef) { if(charts[`chart${i}`]) charts[`chart${i}`].destroy(); titleEl.textContent = `Análise por Categoria ${i}`; return; }
             titleEl.textContent = `${metricDef.label} por ${categoryDef.label}`;
+            
             // --- UPDATED DATALABEL OPTIONS ---
             const options = {
+                scales: { // Adiciona escalas para gráficos de barra
+                    x: { grid: { color: 'rgba(255, 255, 255, 0.1)' } },
+                    y: { grid: { color: 'rgba(255, 255, 255, 0.1)' } }
+                },
                 plugins: {
                     tooltip: { callbacks: { label: (context) => formatChartValue(context, metricDef) } },
                     datalabels: {
                         display: chartLabelsState[`chart${i}`], // Controlled by toggle
                         formatter: (value, context) => {
-                            // Use the updated formatChartValue for datalabels too
+                            // Use the updated formatChartValue for datalabels too 
                              return formatChartValue(context, metricDef);
                         },
                         color: '#fff',
@@ -1136,30 +1373,40 @@
                         textAlign: 'center' // Center multi-line text
                     }
                 }
-            };
+            }; 
              // --- END OF UPDATED OPTIONS ---
+            
+             // Oculta escalas X/Y para gráficos de Pizza/Rosca
+            if (type === 'pie' || type === 'doughnut') {
+                options.scales = {
+                    x: { display: false, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
+                    y: { display: false, grid: { color: 'rgba(255, 255, 255, 0.1)' } }
+                };
+            }
 
             if (isComparisonActive && comparisonData.length > 0) {
-                const chartType = 'bar'; typeSelector.value = 'bar'; typeSelector.disabled = true; toggleBtn.style.display = 'none'; 
-                
-                // [CORRIGIDO] aggregateCategoricalData agora calcula taxas corretamente
+                const chartType = 'bar'; typeSelector.value = 'bar'; typeSelector.disabled = true; toggleBtn.style.display = 'none';
+                                
+                 // [CORRIGIDO] aggregateCategoricalData agora calcula taxas corretamente
                 const groupedDataA = aggregateCategoricalData(filteredData, categoryKey, metricKey); 
                 const groupedDataB = aggregateCategoricalData(comparisonData, categoryKey, metricKey);
-                
+                                
                 const labels = [...new Set([...Object.keys(groupedDataA), ...Object.keys(groupedDataB)])].sort(); const dataA = labels.map(l => groupedDataA[l] || 0); const dataB = labels.map(l => groupedDataB[l] || 0);
                 const chartDatasets = [{ label: 'Período A', data: dataA, backgroundColor: chartColors[0] + '90' }, { label: 'Período B', data: dataB, backgroundColor: chartColors[1] }];
-                if (!showComparisonDetails) { chartDatasets.pop(); options.plugins.legend = { display: false }; } else options.plugins.legend = { display: true };
+                if (!showComparisonDetails) { chartDatasets.pop(); options.plugins.legend = { display: false }; } else options.plugins.legend = { display: true, labels: { color: '#e2e8f0' } };
                 // Disable datalabels for comparison bar charts as they get too cluttered
                 options.plugins.datalabels.display = false;
                 drawOrUpdateChart(`chart${i}`, chartType, { labels, datasets: chartDatasets }, options);
             } else {
                 const chartType = type; typeSelector.disabled = false; toggleBtn.style.display = (chartType === 'pie' || chartType === 'doughnut') ? 'block' : 'none';
-                
+                                
                 // [CORRIGIDO] aggregateCategoricalData agora calcula taxas corretamente
                 const groupedData = aggregateCategoricalData(filteredData, categoryKey, metricKey); 
-                
-                const labels = Object.keys(groupedData).sort((a,b) => groupedData[b] - groupedData[a]); const data = labels.map(l => groupedData[l]);
+                                
+                 const labels = Object.keys(groupedData).sort((a,b) => groupedData[b] - groupedData[a]); const data = labels.map(l => groupedData[l]);
                 const chartDatasets = [{ label: metricDef.label, data: data, backgroundColor: chartColors }];
+                options.plugins.legend = { display: (chartType === 'pie' || chartType === 'doughnut'), labels: { color: '#e2e8f0' } }; // Só mostra legenda para pizza/rosca
+                
                 // Ensure datalabels are potentially displayed for pie/doughnut
                 options.plugins.datalabels.display = chartLabelsState[`chart${i}`] && (chartType === 'pie' || chartType === 'doughnut');
                 drawOrUpdateChart(`chart${i}`, chartType, { labels, datasets: chartDatasets }, options);
@@ -1180,9 +1427,9 @@
                     rowCount: 0, spend: 0, leads: 0, clicks: 0, impressions: 0
                 };
                 // Inicializa outras métricas visíveis
-                metrics.forEach(col => {
+                metrics.forEach(col => { 
                      if (!['spend', 'leads', 'clicks', 'impressions'].includes(col.key)) {
-                         acc[key][col.key] = 0;
+                         acc[key][col.key] = 0; 
                      }
                 });
             }
@@ -1196,9 +1443,9 @@
             // Acumula outras métricas visíveis (que não sejam taxas)
             metrics.forEach(col => {
                 const k = col.key;
-                if (!['spend', 'leads', 'clicks', 'impressions', 'cpl', 'cpc', 'cpm', 'ctr'].includes(k)) {
+                if (!['spend', 'leads', 'clicks', 'impressions', 'cpl', 'cpc', 'cpm', 'ctr'].includes(k)) { 
                      if (typeof item[k] === 'number' && isFinite(item[k])) {
-                         acc[key][k] += item[k];
+                         acc[key][k] += item[k]; 
                      }
                 }
             });
@@ -1220,13 +1467,13 @@
                 } else if (getAggregationType(k) === 'avg' && !['spend', 'leads', 'clicks', 'impressions'].includes(k)) {
                     // Calcula média para outras métricas 'avg' (ex: colunas custom)
                     day[k] = day.rowCount > 0 ? day[k] / day.rowCount : 0;
-                }
+                } 
                  // 'sum' metrics (spend, leads, clicks, etc.) já estão corretas
             });
         });
         return timeData;
-    }
-    
+    } 
+       
     /**
      * [CORRIGIDO] Agrega dados por categoria, garantindo que as métricas de base
      * (spend, leads, etc.) sejam sempre somadas para calcular a métrica de taxa final.
@@ -1244,7 +1491,7 @@
             // Acumula a métrica específica (para casos de 'avg' ou 'sum' simples)
             if (typeof item[metricKey] === 'number' && isFinite(item[metricKey])) {
                 acc[group].sum += item[metricKey]; 
-                acc[group].count++;
+                 acc[group].count++;
             }
             
             // Sempre acumula métricas de base
@@ -1271,7 +1518,7 @@
                 // Fallback para outras métricas 'avg'
                 finalData[group] = g.count > 0 ? g.sum / g.count : 0;
             } else { 
-                // Fallback para métricas 'sum' (spend, leads, clicks, etc.)
+                 // Fallback para métricas 'sum' (spend, leads, clicks, etc.)
                 // Note: se metricKey for 'spend', g.sum será igual a g.spend
                 finalData[group] = g.sum;
             }
@@ -1282,7 +1529,6 @@
     function drawOrUpdateChart(id, type, data, options = {}) { if (charts[id]) charts[id].destroy(); const ctx = document.getElementById(id); if (ctx) charts[id] = new Chart(ctx, { type, data, options }); }
 
     // --- Lógica do Modal de Visão ---
-
     function showToast(message) { elements.toastMessage.textContent = message; elements.toast.classList.remove('hidden', 'translate-x-full'); elements.toast.classList.add('translate-x-0'); setTimeout(() => { elements.toast.classList.remove('translate-x-0'); elements.toast.classList.add('translate-x-full'); setTimeout(() => elements.toast.classList.add('hidden'), 300); }, 3000); }
     function openViewModal() { modalColumnDefinitions = JSON.parse(JSON.stringify(activeColumnDefinitions)); renderModalColumnList(); renderModalHiddenCsvCols(); renderPresetList(); elements.viewModal.classList.remove('hidden'); }
     function closeViewModal() { elements.viewModal.classList.add('hidden'); }
@@ -1309,7 +1555,11 @@
         const container = elements.modalHiddenCsvCols; container.innerHTML = '';
         if (hiddenCols.length === 0) { container.innerHTML = '<p class="text-slate-400">Nenhuma coluna do CSV oculta.</p>'; return; }
         hiddenCols.forEach(col => {
-            const btn = document.createElement('button'); btn.className = "bg-slate-600 hover:bg-slate-700 text-sm py-1 px-3 rounded-full mr-2 mb-2"; btn.textContent = `${col.label} +`; btn.title = `Adicionar coluna ${col.label} (Tipo: ${col.type})`;
+            const btn = document.createElement('button'); 
+            // Botão com estilo Glass
+            btn.className = "btn-secondary py-1 px-3 mr-2 mb-2"; // Usa a classe btn-secondary
+            btn.textContent = `${col.label} +`; 
+            btn.title = `Adicionar coluna ${col.label} (Tipo: ${col.type})`;
             btn.addEventListener('click', () => { modalColumnDefinitions.push({ ...col, visible: true, order: modalColumnDefinitions.length + 1 }); renderModalHiddenCsvCols(); document.querySelector('.modal-tab[data-tab="tab-display"]').click(); renderModalColumnList(); }); container.appendChild(btn);
         });
     }
@@ -1340,6 +1590,7 @@
         reprocessDataWithView(activeColumnDefinitions);
         localStorage.setItem(LAST_VIEW_LS_KEY, JSON.stringify(activeColumnDefinitions));
         updateGraphSelectors();
+        updateTimelineMetricSelector(); // NOVO: Atualiza o seletor da timeline
         // Crucial: Chamar populateDynamicUI AQUI depois que activeColumnDefinitions for atualizado
         populateDynamicUI();
         // Apenas chama applyFilters se NÃO for a carga inicial, pois processData chamará no final
@@ -1347,7 +1598,6 @@
             applyFilters();
         }
     }
-
 
     function reconcileView(savedCols, detectedCols) {
         let reconciled = []; const detectedMap = new Map(detectedCols.map(c => [c.key, c])); const savedKeys = new Set();
@@ -1371,25 +1621,37 @@
             switch (op) { case '+': return valA + valB; case '-': return valA - valB; case '*': return valA * valB; case '/': return valB !== 0 ? valA / valB : null; default: return null; }
         } catch (e) { console.error(`Error calculating formula "${formula}":`, e); return null; }
     }
-
+    
     // --- Lógica de Predefinições (Presets) ---
-
     function loadPresets() { try { const presetsJson = localStorage.getItem(PRESETS_LS_KEY); allPresets = presetsJson ? JSON.parse(presetsJson) : []; } catch (e) { console.error("Error loading presets:", e); allPresets = []; } renderPresetList(); }
     function renderPresetList() { const container = elements.presetList; container.innerHTML = ''; if (allPresets.length === 0) { container.innerHTML = '<p class="text-slate-400">Nenhuma predefinição salva.</p>'; return; } allPresets.sort((a, b) => a.name.localeCompare(b.name)); allPresets.forEach(preset => { const item = document.createElement('div'); item.className = 'flex justify-between items-center p-3 bg-slate-700 rounded-lg'; item.innerHTML = `<span class="font-medium">${preset.name}</span><div><button class="preset-load-btn bg-indigo-600 hover:bg-indigo-700 text-white py-1 px-3 rounded-md text-sm" data-name="${preset.name}">Carregar</button><button class="preset-delete-btn text-red-400 hover:text-red-300 py-1 px-3 rounded-md text-sm" data-name="${preset.name}"><i class="fas fa-trash"></i></button></div>`; container.appendChild(item); }); container.querySelectorAll('.preset-load-btn').forEach(btn => btn.addEventListener('click', (e) => loadPreset(e.target.dataset.name))); container.querySelectorAll('.preset-delete-btn').forEach(btn => btn.addEventListener('click', (e) => deletePreset(e.target.closest('[data-name]').dataset.name))); }
     function savePreset() { const name = elements.presetSaveName.value.trim(); if (!name) { showToast('Por favor, dê um nome para a predefinição.'); return; } const existingIndex = allPresets.findIndex(p => p.name === name); if (existingIndex > -1) { if (!confirm(`Uma predefinição com o nome "${name}" já existe. Deseja sobrescrevê-la?`)) return; allPresets.splice(existingIndex, 1); } const newPreset = { name, createdAt: Date.now(), version: 1, columns: JSON.parse(JSON.stringify(modalColumnDefinitions)) }; allPresets.push(newPreset); localStorage.setItem(PRESETS_LS_KEY, JSON.stringify(allPresets)); elements.presetSaveName.value = ''; renderPresetList(); showToast(`Predefinição "${name}" salva!`); }
     function loadPreset(name) { const preset = allPresets.find(p => p.name === name); if (!preset) { showToast('Erro: predefinição não encontrada.'); return; } applyView(preset.columns); closeViewModal(); showToast(`Predefinição "${name}" carregada!`); }
     function deletePreset(name) { if (!confirm(`Tem certeza que deseja excluir a predefinição "${name}"?`)) return; allPresets = allPresets.filter(p => p.name !== name); localStorage.setItem(PRESETS_LS_KEY, JSON.stringify(allPresets)); renderPresetList(); showToast(`Predefinição "${name}" excluída.`); }
-
+    
     // --- Lógica de Exportação ---
-
-    async function generateCanvas() { const content = document.getElementById('printable-content'); content.classList.add('export-render'); await new Promise(resolve => setTimeout(resolve, 50)); const canvas = await html2canvas(content, { backgroundColor: '#0f172a', scale: 1.5, useCORS: true, allowTaint: true }); content.classList.remove('export-render'); return canvas; }
+    async function generateCanvas() { 
+        const content = document.getElementById('printable-content'); 
+        // Define um fundo temporário para o canvas, já que o body não será capturado
+        content.style.backgroundColor = '#0f172a'; // Um fallback escuro
+        content.classList.add('export-render'); 
+        await new Promise(resolve => setTimeout(resolve, 50)); 
+        const canvas = await html2canvas(content, { 
+            // backgroundColor: '#0f172a', // Cor de fundo do canvas
+            scale: 1.5, 
+            useCORS: true, 
+            allowTaint: true 
+        }); 
+        content.classList.remove('export-render'); 
+        content.style.backgroundColor = ''; // Remove o fundo temporário
+        return canvas; 
+    }
     async function downloadImage() { elements.loadingOverlay.querySelector('p').textContent = 'Gerando Imagem...'; elements.loadingOverlay.classList.remove('hidden'); const canvas = await generateCanvas(); const link = document.createElement('a'); link.download = 'dashboard-analytics.png'; link.href = canvas.toDataURL('image/png'); link.click(); elements.loadingOverlay.classList.add('hidden'); }
     async function downloadPDF() { elements.loadingOverlay.querySelector('p').textContent = 'Gerando PDF...'; elements.loadingOverlay.classList.remove('hidden'); const canvas = await generateCanvas(); const imgData = canvas.toDataURL('image/jpeg', 0.9); const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' }); const pdfWidth = pdf.internal.pageSize.getWidth(); const pdfHeight = pdf.internal.pageSize.getHeight(); const imgProps = pdf.getImageProperties(imgData); const imgHeight = (imgProps.height * pdfWidth) / imgProps.width; let heightLeft = imgHeight, position = 0; pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight, undefined, 'FAST'); heightLeft -= pdfHeight; while (heightLeft > 0) { position -= pdfHeight; pdf.addPage(); pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight, undefined, 'FAST'); heightLeft -= pdfHeight; } pdf.save('dashboard-analytics.pdf'); elements.loadingOverlay.classList.add('hidden'); }
     function downloadAnalysisCSV() { const cols = activeColumnDefinitions.filter(c => c.visible && ['number', 'currency', 'percent'].includes(c.type)).sort((a, b) => (a.order || 999) - (b.order || 999)); let headers = ['Campanha']; let data = []; if (!isComparisonActive || comparisonData.length === 0) { cols.forEach(c => headers.push(c.label)); data = tableProcessedData.map(row => { const csvRow = [row.campaignName]; cols.forEach(col => csvRow.push(formatForCsv(row[col.key], col.type))); return csvRow; }); } else { cols.forEach(c => { headers.push(`${c.label} (A)`); if (showComparisonDetails) headers.push(`${c.label} (B)`); headers.push(`Δ Abs (${c.label})`); headers.push(`Δ % (${c.label})`); }); data = tableProcessedData.map(row => { const csvRow = [row.campaignName]; cols.forEach(col => { const deltaType = col.type === 'percent' ? 'number' : col.type; csvRow.push(formatForCsv(row[`${col.key}_A`], col.type)); if (showComparisonDetails) csvRow.push(formatForCsv(row[`${col.key}_B`], col.type)); csvRow.push(formatForCsv(row[`${col.key}_D_Abs`], deltaType)); csvRow.push(formatForCsv(row[`${col.key}_D_Pct`], 'percent')); }); return csvRow; }); } const csv = Papa.unparse({ fields: headers, data }, { delimiter: ";" }); const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'analise_exportacao.csv'; link.click(); }
     function formatForCsv(val, type) { if (val === null || typeof val === 'undefined' || isNaN(val)) return ""; if (type === 'percent') { if (val === Infinity) return "Novo"; return (val * 100).toFixed(2).replace('.', ','); } if (type === 'currency' || type === 'number') { if (Number.isInteger(val) && type === 'number') return val.toString(); return val.toFixed(2).replace('.', ','); } return val; }
-
+    
     // --- Lógica da AI ---
-
     async function generateInsights() {
         elements.aiBtn.disabled = true; elements.aiContent.classList.add('hidden'); elements.aiLoading.classList.remove('hidden');
         if (!originalData || originalData.length === 0 || !filteredData || filteredData.length === 0) { elements.aiContent.textContent = 'Não há dados suficientes (após filtros) para gerar uma análise.'; elements.aiBtn.disabled = false; elements.aiContent.classList.remove('hidden'); elements.aiLoading.classList.add('hidden'); return; }
@@ -1400,15 +1662,15 @@
         visibleMetrics.forEach(col => {
             const value = aggregateMetric(filteredData, col);
             insightsData += ` - ${col.label} (A): ${formatValue(value, col.type)}`; 
-        });
+         });
         
-        if (isComparisonActive && comparisonData.length > 0) {
-             insightsData += `\nPeríodo B: ${elements.filterStartDateB.value || 'Início'} a ${elements.filterEndDateB.value || 'Fim'}.`;
+        if (isComparisonActive && comparisonData.length > 0) { 
+             insightsData += `\nPeríodo B: ${elements.filterStartDateB.value || 'Início'} a ${elements.filterEndDateB.value || 'Fim'}.`; 
              // [CORRIGIDO] Usa a nova função de agregação para os insights
              visibleMetrics.forEach(col => { 
-                const value = aggregateMetric(comparisonData, col); 
-                insightsData += ` - ${col.label} (B): ${formatValue(value, col.type)}`; 
-            });
+                 const value = aggregateMetric(comparisonData, col); 
+                 insightsData += ` - ${col.label} (B): ${formatValue(value, col.type)}`; 
+             });
         }
         
         const topCampaign = tableProcessedData.length > 0 ? tableProcessedData[0] : null; if (topCampaign) insightsData += ` - Campanha com melhor performance (Período A, ordenado por ${tableState.sortColumn}): ${topCampaign.campaignName}`;
@@ -1416,10 +1678,10 @@
         const maxRetries = 3; let attempt = 0;
         while(attempt < maxRetries) {
             try {
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_API_KEY}`;
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
                 const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
-                if (response.status === 429 || response.status === 503) {
-                     if (attempt === maxRetries - 1) throw new Error(`API Overloaded after ${maxRetries} attempts.`);
+                if (response.status === 429 || response.status === 503) { 
+                     if (attempt === maxRetries - 1) throw new Error(`API Overloaded after ${maxRetries} attempts.`); 
                      await new Promise(res => setTimeout(res, Math.pow(2, attempt) * 1000 + Math.random()*1000)); attempt++; continue;
                 }
                 if (!response.ok) { const errorBody = await response.text(); throw new Error(`API Error ${response.status}: ${errorBody}`); }
@@ -1435,5 +1697,6 @@
         elements.aiBtn.disabled = false; elements.aiContent.classList.remove('hidden'); elements.aiLoading.classList.add('hidden');
     }
 </script>
+
 </body>
 </html>
